@@ -8,14 +8,57 @@ let strokes: Array<Array<Array<number>>> = [];
 let points: Array<Array<number>> = [];
 let drawing = false;
 
+let xScroll = 0;
+let yScroll = 0;
+
+function handleScrollWheel(e: WheelEvent) {
+  if (e.deltaY > 0) {
+    canvasScroll(globalCanvas, 0, -10);
+  } else if (e.deltaY < 0) {
+    canvasScroll(globalCanvas, 0, 10);
+  }
+}
+
+function handleMouseDown(e: MouseEvent) {
+  drawing = true;
+  let rect = (e.target as HTMLElement).getBoundingClientRect();
+  points.push([
+    e.clientX - rect.left - xScroll,
+    e.clientY - rect.top - yScroll,
+  ]);
+  renderStrokes(globalCanvas, [points]);
+}
+
+function handleMouseUp() {
+  drawing = false;
+  strokes.push(points);
+  points = [];
+
+  clearCanvas(globalCanvas);
+  renderStrokes(globalCanvas, strokes);
+}
+
 function handleMouseMove(e: MouseEvent) {
   if (drawing) {
     let rect = (e.target as HTMLElement).getBoundingClientRect();
-    points.push([e.clientX - rect.left, e.clientY - rect.top]);
+    points.push([
+      e.clientX - rect.left - xScroll,
+      e.clientY - rect.top - yScroll,
+    ]);
 
     // Only render then new line being drawn
     renderStrokes(globalCanvas, [points]);
   }
+}
+
+function canvasScroll(canvas: HTMLCanvasElement, x: number, y: number) {
+  const context = canvas.getContext("2d");
+  xScroll += x;
+  yScroll += y;
+
+  context.translate(x, y);
+  clearCanvas(canvas);
+  renderStrokes(canvas, strokes);
 }
 
 function renderStrokes(
@@ -54,22 +97,6 @@ function clearCanvas(canvas: HTMLCanvasElement) {
   context.restore();
 }
 
-function handleMouseDown(e: MouseEvent) {
-  drawing = true;
-  let rect = (e.target as HTMLElement).getBoundingClientRect();
-  points.push([e.clientX - rect.left, e.clientY - rect.top]);
-  renderStrokes(globalCanvas, [points]);
-}
-
-function handleMouseUp() {
-  drawing = false;
-  strokes.push(points);
-  points = [];
-
-  clearCanvas(globalCanvas);
-  renderStrokes(globalCanvas, strokes);
-}
-
 function resizeCanvas(
   canvas: HTMLCanvasElement,
   width: number,
@@ -85,12 +112,10 @@ function createCanvas(width: number, height: number) {
 
   resizeCanvas(canvas, width, height);
 
-  // if (canvas.getContext) {
-  // const ctx = canvas.getContext("2d");
-  // }
   canvas.addEventListener("mousemove", handleMouseMove);
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mouseup", handleMouseUp);
+  canvas.addEventListener("wheel", handleScrollWheel);
 
   return canvas;
 }
