@@ -15,7 +15,7 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      title: "better notes",
+      title: "betternotes",
     }),
   ],
   optimization: {

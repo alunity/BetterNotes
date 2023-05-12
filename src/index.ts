@@ -1,9 +1,13 @@
-function component() {
+import createCanvas from "./canvas";
+
+function render() {
   const element = document.createElement("div");
 
-  element.innerHTML = "Hello world from TypeScript";
+  element.appendChild(
+    createCanvas(window.innerWidth - 25, window.innerHeight - 25)
+  );
 
   return element;
 }
 
-document.body.appendChild(component());
+document.body.appendChild(render());
