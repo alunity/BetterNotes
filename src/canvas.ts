@@ -2,175 +2,175 @@ import { getStroke } from "perfect-freehand";
 import getSvgPathFromStroke from "./SvgPathFromStroke";
 import "./canvas.css";
 
-let globalCanvas: HTMLCanvasElement = undefined;
+class canvas {
+  canvasElement: HTMLCanvasElement = undefined;
 
-let strokes: Array<Array<Array<number>>> = [];
-let points: Array<Array<number>> = [];
-let drawing = false;
-
-let xScroll = 0;
-let yScroll = 0;
-let zoomFactor = 1;
-
-const ZOOM_MULT = 1.25;
-const SCROLL = 10;
-
-function handleScrollWheel(e: WheelEvent) {
-  if (e.deltaY > 0) {
-    // Right, Zoom out, down
-    if (e.shiftKey) {
-      canvasScroll(globalCanvas, -SCROLL, 0);
-    } else if (e.ctrlKey) {
-      // Zoom out
-      canvasScroll(
-        globalCanvas,
-        -globalCanvas.width / 2,
-        -globalCanvas.height / 2
-      );
-      canvasZoom(globalCanvas, 1 / ZOOM_MULT);
-      canvasScroll(
-        globalCanvas,
-        globalCanvas.width / 2,
-        globalCanvas.height / 2
-      );
-    } else {
-      canvasScroll(globalCanvas, 0, -SCROLL);
-    }
-  } else if (e.deltaY < 0) {
-    // Left, Zoom in, up
-    if (e.shiftKey) {
-      canvasScroll(globalCanvas, SCROLL, 0);
-    } else if (e.ctrlKey) {
-      // canvasScroll(globalCanvas, -e.clientX, -e.clientY);
-      canvasScroll(
-        globalCanvas,
-        -globalCanvas.width / 2,
-        -globalCanvas.height / 2
-      );
-      canvasZoom(globalCanvas, ZOOM_MULT);
-      canvasScroll(
-        globalCanvas,
-        globalCanvas.width / 2,
-        globalCanvas.height / 2
-      );
-    } else {
-      canvasScroll(globalCanvas, 0, SCROLL);
-    }
-  }
-  e.preventDefault();
-}
-
-function handleMouseDown(e: MouseEvent) {
-  drawing = true;
-  let rect = (e.target as HTMLElement).getBoundingClientRect();
-  points.push([
-    (e.clientX - rect.left) / zoomFactor - xScroll,
-    (e.clientY - rect.top) / zoomFactor - yScroll,
-  ]);
-  renderStrokes(globalCanvas, [points]);
-}
-
-function handleMouseUp() {
+  strokes: Array<Array<Array<number>>> = [];
   drawing = false;
-  strokes.push(points);
-  points = [];
+  points: Array<Array<number>> = [];
 
-  clearCanvas(globalCanvas);
-  renderStrokes(globalCanvas, strokes);
-}
+  xScroll = 0;
+  yScroll = 0;
+  zoomFactor = 1;
 
-function handleMouseMove(e: MouseEvent) {
-  if (drawing) {
-    let rect = (e.target as HTMLElement).getBoundingClientRect();
-    points.push([
-      (e.clientX - rect.left) / zoomFactor - xScroll,
-      (e.clientY - rect.top) / zoomFactor - yScroll,
-    ]);
+  ZOOM_MULT = 1.25;
+  SCROLL = 20;
 
-    // Only render then new line being drawn
-    renderStrokes(globalCanvas, [points]);
+  handleScrollWheel(e: WheelEvent) {
+    if (e.deltaY > 0) {
+      // Right, Zoom out, down
+      if (e.shiftKey) {
+        this.canvasScroll(-this.SCROLL, 0);
+      } else if (e.ctrlKey) {
+        // Zoom out
+        this.canvasScroll(
+          -this.canvasElement.width / 2,
+          -this.canvasElement.height / 2
+        );
+        this.canvasZoom(1 / this.ZOOM_MULT);
+        this.canvasScroll(
+          this.canvasElement.width / 2,
+          this.canvasElement.height / 2
+        );
+      } else {
+        this.canvasScroll(0, -this.SCROLL);
+      }
+    } else if (e.deltaY < 0) {
+      // Left, Zoom in, up
+      if (e.shiftKey) {
+        this.canvasScroll(this.SCROLL, 0);
+      } else if (e.ctrlKey) {
+        // canvasScroll(globalCanvas, -e.clientX, -e.clientY);
+        this.canvasScroll(
+          -this.canvasElement.width / 2,
+          -this.canvasElement.height / 2
+        );
+        this.canvasZoom(this.ZOOM_MULT);
+        this.canvasScroll(
+          this.canvasElement.width / 2,
+          this.canvasElement.height / 2
+        );
+      } else {
+        this.canvasScroll(0, this.SCROLL);
+      }
+    }
+    e.preventDefault();
   }
-}
 
-function canvasScroll(canvas: HTMLCanvasElement, x: number, y: number) {
-  const context = canvas.getContext("2d");
-  xScroll += x / zoomFactor;
-  yScroll += y / zoomFactor;
+  handleMouseDown(e: MouseEvent) {
+    if (e.buttons == 1) {
+      this.drawing = true;
+      let rect = (e.target as HTMLElement).getBoundingClientRect();
+      this.points.push([
+        (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
+        (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
+      ]);
+      this.renderStrokes([this.points]);
+    }
+  }
 
-  context.translate(x / zoomFactor, y / zoomFactor);
-  clearCanvas(canvas);
-  renderStrokes(canvas, strokes);
-}
+  handleMouseUp() {
+    this.drawing = false;
+    this.strokes.push(this.points);
+    this.points = [];
 
-function canvasZoom(canvas: HTMLCanvasElement, factor: number) {
-  const context = canvas.getContext("2d");
-  zoomFactor *= factor;
+    this.clearCanvas();
+    this.renderStrokes(this.strokes);
+  }
 
-  context.resetTransform();
+  handleMouseMove(e: MouseEvent) {
+    if (this.drawing) {
+      let rect = (e.target as HTMLElement).getBoundingClientRect();
+      this.points.push([
+        (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
+        (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
+      ]);
 
-  context.scale(zoomFactor, zoomFactor);
-  context.translate(xScroll, yScroll);
-  clearCanvas(canvas);
-  renderStrokes(canvas, strokes);
-}
+      // Only render then new line being drawn
+      this.renderStrokes([this.points]);
+    }
+  }
 
-function renderStrokes(
-  canvas: HTMLCanvasElement,
-  strokes: Array<Array<Array<number>>>
-) {
-  const context = canvas.getContext("2d");
+  canvasScroll(x: number, y: number) {
+    const context = this.canvasElement.getContext("2d");
+    this.xScroll += x / this.zoomFactor;
+    this.yScroll += y / this.zoomFactor;
 
-  let stroke = getStroke(points);
-  let pathData = getSvgPathFromStroke(stroke);
-  let path = new Path2D(pathData);
-  context.fill(path);
+    context.translate(x / this.zoomFactor, y / this.zoomFactor);
+    this.clearCanvas();
+    this.renderStrokes(this.strokes);
+  }
 
-  for (let i = 0; i < strokes.length; i++) {
-    stroke = getStroke(strokes[i]);
-    pathData = getSvgPathFromStroke(stroke);
+  canvasZoom(factor: number) {
+    const context = this.canvasElement.getContext("2d");
+    this.zoomFactor *= factor;
 
+    context.resetTransform();
+
+    context.scale(this.zoomFactor, this.zoomFactor);
+    context.translate(this.xScroll, this.yScroll);
+    this.clearCanvas();
+    this.renderStrokes(this.strokes);
+  }
+
+  renderStrokes(strokes: Array<Array<Array<number>>>) {
+    const context = this.canvasElement.getContext("2d");
+
+    let stroke = getStroke(this.points);
+    let pathData = getSvgPathFromStroke(stroke);
     let path = new Path2D(pathData);
     context.fill(path);
+
+    for (let i = 0; i < strokes.length; i++) {
+      stroke = getStroke(strokes[i]);
+      pathData = getSvgPathFromStroke(stroke);
+
+      let path = new Path2D(pathData);
+      context.fill(path);
+    }
+  }
+
+  clearCanvas() {
+    const context = this.canvasElement.getContext("2d");
+
+    context.beginPath();
+
+    // Store the current transformation matrix
+    context.save();
+
+    // Use the identity matrix while clearing the canvas
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(
+      0,
+      0,
+      this.canvasElement.width,
+      this.canvasElement.height
+    );
+
+    // Restore the transform
+    context.restore();
+  }
+
+  resizeCanvas(width: number, height: number) {
+    this.canvasElement.height = height;
+    this.canvasElement.width = width;
+  }
+
+  constructor(width: number, height: number) {
+    const canvas = document.createElement("canvas");
+    this.canvasElement = canvas;
+
+    this.resizeCanvas(width, height);
+
+    canvas.addEventListener("mousemove", this.handleMouseMove.bind(this));
+    canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
+    canvas.addEventListener("mouseup", this.handleMouseUp.bind(this));
+    canvas.addEventListener("wheel", this.handleScrollWheel.bind(this));
+  }
+
+  get element() {
+    return this.canvasElement;
   }
 }
 
-function clearCanvas(canvas: HTMLCanvasElement) {
-  const context = canvas.getContext("2d");
-
-  context.beginPath();
-
-  // Store the current transformation matrix
-  context.save();
-
-  // Use the identity matrix while clearing the canvas
-  context.setTransform(1, 0, 0, 1, 0, 0);
-  context.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Restore the transform
-  context.restore();
-}
-
-function resizeCanvas(
-  canvas: HTMLCanvasElement,
-  width: number,
-  height: number
-) {
-  canvas.height = height;
-  canvas.width = width;
-}
-
-function createCanvas(width: number, height: number) {
-  const canvas = document.createElement("canvas");
-  globalCanvas = canvas;
-
-  resizeCanvas(canvas, width, height);
-
-  canvas.addEventListener("mousemove", handleMouseMove);
-  canvas.addEventListener("mousedown", handleMouseDown);
-  canvas.addEventListener("mouseup", handleMouseUp);
-  canvas.addEventListener("wheel", handleScrollWheel);
-
-  return canvas;
-}
-
-export default createCanvas;
+export default canvas;
