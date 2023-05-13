@@ -12,32 +12,49 @@ let xScroll = 0;
 let yScroll = 0;
 let zoomFactor = 1;
 
+const ZOOM_MULT = 1.25;
+const SCROLL = 10;
+
 function handleScrollWheel(e: WheelEvent) {
-  console.table({
-    x: xScroll,
-    y: yScroll,
-    zoom: zoomFactor,
-    mouseX: e.clientX,
-    mouseY: e.clientY,
-  });
   if (e.deltaY > 0) {
     // Right, Zoom out, down
     if (e.shiftKey) {
-      canvasScroll(globalCanvas, -10, 0);
+      canvasScroll(globalCanvas, -SCROLL, 0);
     } else if (e.ctrlKey) {
       // Zoom out
-      canvasZoom(globalCanvas, 2 / 3);
+      canvasScroll(
+        globalCanvas,
+        -globalCanvas.width / 2,
+        -globalCanvas.height / 2
+      );
+      canvasZoom(globalCanvas, 1 / ZOOM_MULT);
+      canvasScroll(
+        globalCanvas,
+        globalCanvas.width / 2,
+        globalCanvas.height / 2
+      );
     } else {
-      canvasScroll(globalCanvas, 0, -10);
+      canvasScroll(globalCanvas, 0, -SCROLL);
     }
   } else if (e.deltaY < 0) {
     // Left, Zoom in, up
     if (e.shiftKey) {
-      canvasScroll(globalCanvas, 10, 0);
+      canvasScroll(globalCanvas, SCROLL, 0);
     } else if (e.ctrlKey) {
-      canvasZoom(globalCanvas, 1.5);
+      // canvasScroll(globalCanvas, -e.clientX, -e.clientY);
+      canvasScroll(
+        globalCanvas,
+        -globalCanvas.width / 2,
+        -globalCanvas.height / 2
+      );
+      canvasZoom(globalCanvas, ZOOM_MULT);
+      canvasScroll(
+        globalCanvas,
+        globalCanvas.width / 2,
+        globalCanvas.height / 2
+      );
     } else {
-      canvasScroll(globalCanvas, 0, 10);
+      canvasScroll(globalCanvas, 0, SCROLL);
     }
   }
   e.preventDefault();
