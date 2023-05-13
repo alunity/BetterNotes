@@ -10,21 +10,45 @@ let drawing = false;
 
 let xScroll = 0;
 let yScroll = 0;
+let zoomFactor = 1;
 
 function handleScrollWheel(e: WheelEvent) {
+  console.table({
+    x: xScroll,
+    y: yScroll,
+    zoom: zoomFactor,
+    mouseX: e.clientX,
+    mouseY: e.clientY,
+  });
   if (e.deltaY > 0) {
-    canvasScroll(globalCanvas, 0, -10);
+    // Right, Zoom out, down
+    if (e.shiftKey) {
+      canvasScroll(globalCanvas, -10, 0);
+    } else if (e.ctrlKey) {
+      // Zoom out
+      canvasZoom(globalCanvas, 2 / 3);
+    } else {
+      canvasScroll(globalCanvas, 0, -10);
+    }
   } else if (e.deltaY < 0) {
-    canvasScroll(globalCanvas, 0, 10);
+    // Left, Zoom in, up
+    if (e.shiftKey) {
+      canvasScroll(globalCanvas, 10, 0);
+    } else if (e.ctrlKey) {
+      canvasZoom(globalCanvas, 1.5);
+    } else {
+      canvasScroll(globalCanvas, 0, 10);
+    }
   }
+  e.preventDefault();
 }
 
 function handleMouseDown(e: MouseEvent) {
   drawing = true;
   let rect = (e.target as HTMLElement).getBoundingClientRect();
   points.push([
-    e.clientX - rect.left - xScroll,
-    e.clientY - rect.top - yScroll,
+    (e.clientX - rect.left) / zoomFactor - xScroll,
+    (e.clientY - rect.top) / zoomFactor - yScroll,
   ]);
   renderStrokes(globalCanvas, [points]);
 }
@@ -42,8 +66,8 @@ function handleMouseMove(e: MouseEvent) {
   if (drawing) {
     let rect = (e.target as HTMLElement).getBoundingClientRect();
     points.push([
-      e.clientX - rect.left - xScroll,
-      e.clientY - rect.top - yScroll,
+      (e.clientX - rect.left) / zoomFactor - xScroll,
+      (e.clientY - rect.top) / zoomFactor - yScroll,
     ]);
 
     // Only render then new line being drawn
@@ -53,10 +77,22 @@ function handleMouseMove(e: MouseEvent) {
 
 function canvasScroll(canvas: HTMLCanvasElement, x: number, y: number) {
   const context = canvas.getContext("2d");
-  xScroll += x;
-  yScroll += y;
+  xScroll += x / zoomFactor;
+  yScroll += y / zoomFactor;
 
-  context.translate(x, y);
+  context.translate(x / zoomFactor, y / zoomFactor);
+  clearCanvas(canvas);
+  renderStrokes(canvas, strokes);
+}
+
+function canvasZoom(canvas: HTMLCanvasElement, factor: number) {
+  const context = canvas.getContext("2d");
+  zoomFactor *= factor;
+
+  context.resetTransform();
+
+  context.scale(zoomFactor, zoomFactor);
+  context.translate(xScroll, yScroll);
   clearCanvas(canvas);
   renderStrokes(canvas, strokes);
 }
