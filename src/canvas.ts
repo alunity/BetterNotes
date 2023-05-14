@@ -2,10 +2,39 @@ import { getStroke } from "perfect-freehand";
 import getSvgPathFromStroke from "./SvgPathFromStroke";
 import "./canvas.css";
 
+const penOptions = {
+  size: 10,
+  smoothing: 0.48,
+  thinning: 0,
+  streamline: 0.23,
+  easing: (t: number) => Math.sin((t * Math.PI) / 2),
+  start: {
+    taper: 0,
+    cap: true,
+  },
+  end: {
+    taper: 0,
+    cap: true,
+  },
+};
+
+// Top left
+// [[-this.xScroll, -this.yScroll]]
+
+// Top right
+//   [(this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,-this.yScroll,]
+
+// Bottom left
+// [-this.xScroll,(this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,]
+
+// Bottom right
+// [(this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,(this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,],
+
 class canvas {
   canvasElement: HTMLCanvasElement = undefined;
 
   strokes: Array<Array<Array<number>>> = [];
+  canDraw = true;
   drawing = false;
   points: Array<Array<number>> = [];
 
@@ -54,11 +83,12 @@ class canvas {
         this.canvasScroll(0, this.SCROLL);
       }
     }
+
     e.preventDefault();
   }
 
   handleMouseDown(e: MouseEvent) {
-    if (e.buttons == 1) {
+    if (e.buttons == 1 && this.canDraw) {
       this.drawing = true;
       let rect = (e.target as HTMLElement).getBoundingClientRect();
       this.points.push([
@@ -74,8 +104,7 @@ class canvas {
     this.strokes.push(this.points);
     this.points = [];
 
-    this.clearCanvas();
-    this.renderStrokes(this.strokes);
+    this.render();
   }
 
   handleMouseMove(e: MouseEvent) {
@@ -97,8 +126,7 @@ class canvas {
     this.yScroll += y / this.zoomFactor;
 
     context.translate(x / this.zoomFactor, y / this.zoomFactor);
-    this.clearCanvas();
-    this.renderStrokes(this.strokes);
+    this.render();
   }
 
   canvasZoom(factor: number) {
@@ -109,21 +137,14 @@ class canvas {
 
     context.scale(this.zoomFactor, this.zoomFactor);
     context.translate(this.xScroll, this.yScroll);
-    this.clearCanvas();
-    this.renderStrokes(this.strokes);
+    this.render();
   }
 
   renderStrokes(strokes: Array<Array<Array<number>>>) {
     const context = this.canvasElement.getContext("2d");
-
-    let stroke = getStroke(this.points);
-    let pathData = getSvgPathFromStroke(stroke);
-    let path = new Path2D(pathData);
-    context.fill(path);
-
     for (let i = 0; i < strokes.length; i++) {
-      stroke = getStroke(strokes[i]);
-      pathData = getSvgPathFromStroke(stroke);
+      const stroke = getStroke(strokes[i], penOptions);
+      const pathData = getSvgPathFromStroke(stroke);
 
       let path = new Path2D(pathData);
       context.fill(path);
@@ -151,6 +172,33 @@ class canvas {
     context.restore();
   }
 
+  render() {
+    this.clearCanvas();
+
+    // Find strokes in view
+    const strokesToRender = [];
+    const TOP_LEFT = [-this.xScroll, -this.yScroll];
+    const BOTTOM_RIGHT = [
+      (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,
+      (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,
+    ];
+    for (let i = 0; i < this.strokes.length; i++) {
+      for (let j = 0; j < this.strokes[i].length; j++) {
+        if (
+          this.strokes[i][j][0] > TOP_LEFT[0] &&
+          this.strokes[i][j][1] > TOP_LEFT[1] &&
+          this.strokes[i][j][0] < BOTTOM_RIGHT[0] &&
+          this.strokes[i][j][1] < BOTTOM_RIGHT[1]
+        ) {
+          strokesToRender.push(this.strokes[i]);
+          break;
+        }
+      }
+    }
+    this.renderStrokes(strokesToRender);
+    if (this.drawing) this.renderStrokes([this.points]);
+  }
+
   resizeCanvas(width: number, height: number) {
     this.canvasElement.height = height;
     this.canvasElement.width = width;
@@ -170,6 +218,10 @@ class canvas {
 
   get element() {
     return this.canvasElement;
+  }
+
+  set allowedToDraw(value: boolean) {
+    this.canDraw = value;
   }
 }
 
