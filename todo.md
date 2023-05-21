@@ -19,3 +19,5 @@
     	-[ ] Store in localstorage
     	-[ ] Page size
     -[ ] Folders (maybe)
+
+At some point check how to render pdf with only one canvas

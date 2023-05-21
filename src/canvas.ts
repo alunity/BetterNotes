@@ -30,6 +30,10 @@ const penOptions = {
 // Bottom right
 // [(this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,(this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,],
 
+interface iListeners {
+  [name: string]: any;
+}
+
 class canvas {
   canvasElement: HTMLCanvasElement = undefined;
 
@@ -44,6 +48,10 @@ class canvas {
 
   ZOOM_MULT = 1.25;
   SCROLL = 20;
+
+  backgrounds: Array<HTMLImageElement> = [];
+
+  listeners: iListeners = {};
 
   handleScrollWheel(e: WheelEvent) {
     if (e.deltaY > 0) {
@@ -151,6 +159,32 @@ class canvas {
     }
   }
 
+  renderBackground() {
+    let context = this.canvasElement.getContext("2d");
+    let currY = 0;
+
+    const TOP_LEFT = [-this.xScroll, -this.yScroll];
+    const BOTTOM_RIGHT = [
+      (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,
+      (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,
+    ];
+
+    let rendered = 0;
+
+    for (let i = 0; i < this.backgrounds.length; i++) {
+      if (
+        BOTTOM_RIGHT[0] > 0 &&
+        BOTTOM_RIGHT[1] > currY &&
+        TOP_LEFT[0] < this.backgrounds[i].width &&
+        TOP_LEFT[1] < currY + this.backgrounds[i].height
+      ) {
+        context.drawImage(this.backgrounds[i], 0, currY);
+        rendered++;
+      }
+      currY += this.backgrounds[i].height;
+    }
+  }
+
   clearCanvas() {
     const context = this.canvasElement.getContext("2d");
 
@@ -172,8 +206,10 @@ class canvas {
     context.restore();
   }
 
-  render() {
+  async render() {
     this.clearCanvas();
+
+    this.renderBackground();
 
     // Find strokes in view
     const strokesToRender = [];
@@ -209,11 +245,44 @@ class canvas {
     this.canvasElement = canvas;
 
     this.resizeCanvas(width, height);
+  }
 
-    canvas.addEventListener("mousemove", this.handleMouseMove.bind(this));
-    canvas.addEventListener("mousedown", this.handleMouseDown.bind(this));
-    canvas.addEventListener("mouseup", this.handleMouseUp.bind(this));
-    canvas.addEventListener("wheel", this.handleScrollWheel.bind(this));
+  bindListeners() {
+    this.listeners["mousemove"] = this.handleMouseMove.bind(this);
+    this.listeners["mousedown"] = this.handleMouseDown.bind(this);
+    this.listeners["mouseup"] = this.handleMouseUp.bind(this);
+    this.listeners["wheel"] = this.handleScrollWheel.bind(this);
+
+    console.log(this.listeners);
+
+    this.canvasElement.addEventListener(
+      "mousemove",
+      this.listeners["mousemove"]
+    );
+    this.canvasElement.addEventListener(
+      "mousedown",
+      this.listeners["mousedown"]
+    );
+    this.canvasElement.addEventListener("mouseup", this.listeners["mouseup"]);
+    this.canvasElement.addEventListener("wheel", this.listeners["wheel"]);
+  }
+
+  removeListener() {
+    this.canvasElement.removeEventListener(
+      "mousemove",
+
+      this.listeners["mousemove"]
+    );
+    this.canvasElement.removeEventListener(
+      "mousedown",
+
+      this.listeners["mousedown"]
+    );
+    this.canvasElement.removeEventListener(
+      "mouseup",
+      this.listeners["mouseup"]
+    );
+    this.canvasElement.removeEventListener("wheel", this.listeners["wheel"]);
   }
 
   get element() {
@@ -222,6 +291,21 @@ class canvas {
 
   set allowedToDraw(value: boolean) {
     this.canDraw = value;
+  }
+
+  set background(x: Array<string>) {
+    for (let i = 0; i < x.length; i++) {
+      let img = new Image();
+      img.src = x[i];
+      this.backgrounds.push(img);
+    }
+
+    // Ensures that render executes after background is set
+    // I really need to figure out async :(
+    setTimeout(() => {
+      this.render();
+      this.bindListeners();
+    }, 1);
   }
 }
 

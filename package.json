@@ -21,6 +21,7 @@
     "webpack-dev-server": "^4.15.0"
   },
   "dependencies": {
+    "pdfjs-dist": "^3.6.172",
     "perfect-freehand": "^1.2.0"
   }
 }
