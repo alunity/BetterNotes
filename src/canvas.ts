@@ -77,7 +77,6 @@ class canvas {
       if (e.shiftKey) {
         this.canvasScroll(this.SCROLL, 0);
       } else if (e.ctrlKey) {
-        // canvasScroll(globalCanvas, -e.clientX, -e.clientY);
         this.canvasScroll(
           -this.canvasElement.width / 2,
           -this.canvasElement.height / 2
@@ -96,7 +95,7 @@ class canvas {
   }
 
   handleMouseDown(e: MouseEvent) {
-    if (e.buttons == 1 && this.canDraw) {
+    if (e.buttons == 1 && this.canDraw && this.pageCursorIsOn(e) !== -1) {
       this.drawing = true;
       let rect = (e.target as HTMLElement).getBoundingClientRect();
       this.points.push([
@@ -107,16 +106,38 @@ class canvas {
     }
   }
 
+  pageCursorIsOn(e: MouseEvent) {
+    const TOP_LEFT = [-this.xScroll, -this.yScroll];
+    const POS = [
+      TOP_LEFT[0] + e.clientX / this.zoomFactor,
+      TOP_LEFT[1] + e.clientY / this.zoomFactor,
+    ];
+    let currY = 0;
+
+    for (let i = 0; i < this.backgrounds.length; i++) {
+      if (
+        POS[0] > 0 &&
+        POS[1] > currY &&
+        POS[0] < this.backgrounds[i].width &&
+        POS[1] < currY + this.backgrounds[i].height
+      ) {
+        return i + 1;
+      }
+      currY += this.backgrounds[i].height;
+    }
+    return -1;
+  }
+
   handleMouseUp() {
     this.drawing = false;
     this.strokes.push(this.points);
     this.points = [];
 
-    this.render();
+    window.requestAnimationFrame(this.render.bind(this));
   }
 
   handleMouseMove(e: MouseEvent) {
-    if (this.drawing) {
+    if (this.drawing && this.pageCursorIsOn(e) !== -1) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
       this.points.push([
         (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
@@ -134,7 +155,8 @@ class canvas {
     this.yScroll += y / this.zoomFactor;
 
     context.translate(x / this.zoomFactor, y / this.zoomFactor);
-    this.render();
+    // this.render();
+    window.requestAnimationFrame(this.render.bind(this));
   }
 
   canvasZoom(factor: number) {
@@ -145,13 +167,35 @@ class canvas {
 
     context.scale(this.zoomFactor, this.zoomFactor);
     context.translate(this.xScroll, this.yScroll);
-    this.render();
+    window.requestAnimationFrame(this.render.bind(this));
+    // this.render();
   }
 
   renderStrokes(strokes: Array<Array<Array<number>>>) {
     const context = this.canvasElement.getContext("2d");
+    // Find strokes in view
+    const strokesToRender = [];
+    const TOP_LEFT = [-this.xScroll, -this.yScroll];
+    const BOTTOM_RIGHT = [
+      (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,
+      (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,
+    ];
     for (let i = 0; i < strokes.length; i++) {
-      const stroke = getStroke(strokes[i], penOptions);
+      for (let j = 0; j < strokes[i].length; j++) {
+        if (
+          strokes[i][j][0] > TOP_LEFT[0] &&
+          strokes[i][j][1] > TOP_LEFT[1] &&
+          strokes[i][j][0] < BOTTOM_RIGHT[0] &&
+          strokes[i][j][1] < BOTTOM_RIGHT[1]
+        ) {
+          strokesToRender.push(strokes[i]);
+          break;
+        }
+      }
+    }
+
+    for (let i = 0; i < strokesToRender.length; i++) {
+      const stroke = getStroke(strokesToRender[i], penOptions);
       const pathData = getSvgPathFromStroke(stroke);
 
       let path = new Path2D(pathData);
@@ -169,8 +213,18 @@ class canvas {
       (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,
     ];
 
-    let rendered = 0;
+    // Render Backdrop
+    this.canvasElement.getContext("2d").fillStyle = "#333333";
+    this.canvasElement
+      .getContext("2d")
+      .fillRect(
+        TOP_LEFT[0],
+        TOP_LEFT[1],
+        BOTTOM_RIGHT[0] - TOP_LEFT[0],
+        BOTTOM_RIGHT[1] - TOP_LEFT[1]
+      );
 
+    // Render PDF
     for (let i = 0; i < this.backgrounds.length; i++) {
       if (
         BOTTOM_RIGHT[0] > 0 &&
@@ -179,7 +233,12 @@ class canvas {
         TOP_LEFT[1] < currY + this.backgrounds[i].height
       ) {
         context.drawImage(this.backgrounds[i], 0, currY);
-        rendered++;
+        context.strokeRect(
+          0,
+          currY,
+          this.backgrounds[i].width,
+          this.backgrounds[i].height
+        );
       }
       currY += this.backgrounds[i].height;
     }
@@ -206,32 +265,12 @@ class canvas {
     context.restore();
   }
 
-  async render() {
+  render() {
     this.clearCanvas();
 
     this.renderBackground();
 
-    // Find strokes in view
-    const strokesToRender = [];
-    const TOP_LEFT = [-this.xScroll, -this.yScroll];
-    const BOTTOM_RIGHT = [
-      (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,
-      (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,
-    ];
-    for (let i = 0; i < this.strokes.length; i++) {
-      for (let j = 0; j < this.strokes[i].length; j++) {
-        if (
-          this.strokes[i][j][0] > TOP_LEFT[0] &&
-          this.strokes[i][j][1] > TOP_LEFT[1] &&
-          this.strokes[i][j][0] < BOTTOM_RIGHT[0] &&
-          this.strokes[i][j][1] < BOTTOM_RIGHT[1]
-        ) {
-          strokesToRender.push(this.strokes[i]);
-          break;
-        }
-      }
-    }
-    this.renderStrokes(strokesToRender);
+    this.renderStrokes(this.strokes);
     if (this.drawing) this.renderStrokes([this.points]);
   }
 
@@ -252,8 +291,6 @@ class canvas {
     this.listeners["mousedown"] = this.handleMouseDown.bind(this);
     this.listeners["mouseup"] = this.handleMouseUp.bind(this);
     this.listeners["wheel"] = this.handleScrollWheel.bind(this);
-
-    console.log(this.listeners);
 
     this.canvasElement.addEventListener(
       "mousemove",
