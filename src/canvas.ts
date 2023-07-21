@@ -1,11 +1,11 @@
 import { getStroke } from "perfect-freehand";
 import getSvgPathFromStroke from "./SvgPathFromStroke";
-import "./canvas.css";
+import recogniseCharacter from "./character_recognition/characterRecognition";
 
 const penOptions = {
-  size: 10,
+  size: 5,
   smoothing: 0.48,
-  thinning: 0,
+  thinning: 0.5,
   streamline: 0.23,
   easing: (t: number) => Math.sin((t * Math.PI) / 2),
   start: {
@@ -16,7 +16,25 @@ const penOptions = {
     taper: 0,
     cap: true,
   },
+  simulatePressure: false,
 };
+
+// const penOptions = {
+//   size: 16,
+//   smoothing: 0.5,
+//   thinning: 0.5,
+//   streamline: 0.5,
+//   easing: (t: number) => t,
+//   start: {
+//     taper: 0,
+//     cap: true,
+//   },
+//   end: {
+//     taper: 0,
+//     cap: true,
+//   },
+//   simulatePressure: false
+// }
 
 // Top left
 // [[-this.xScroll, -this.yScroll]]
@@ -94,13 +112,14 @@ class canvas {
     e.preventDefault();
   }
 
-  handleMouseDown(e: MouseEvent) {
+  handlePointerDown(e: PointerEvent) {
     if (e.buttons == 1 && this.canDraw && this.pageCursorIsOn(e) !== -1) {
       this.drawing = true;
       let rect = (e.target as HTMLElement).getBoundingClientRect();
       this.points.push([
         (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
         (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
+        e.pressure,
       ]);
       this.renderStrokes([this.points]);
     }
@@ -128,22 +147,29 @@ class canvas {
     return -1;
   }
 
-  handleMouseUp() {
+  handlePointerUp() {
     this.drawing = false;
     this.strokes.push(this.points);
+
+    recogniseCharacter(this.points);
+
     this.points = [];
 
     window.requestAnimationFrame(this.render.bind(this));
   }
 
-  handleMouseMove(e: MouseEvent) {
+  handlePointerMove(e: PointerEvent) {
     if (this.drawing && this.pageCursorIsOn(e) !== -1) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
       this.points.push([
         (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
         (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
+        e.pressure,
       ]);
 
+      if (!(this.points.length % 10)) {
+        this.render();
+      }
       // Only render then new line being drawn
       this.renderStrokes([this.points]);
     }
@@ -287,36 +313,36 @@ class canvas {
   }
 
   bindListeners() {
-    this.listeners["mousemove"] = this.handleMouseMove.bind(this);
-    this.listeners["mousedown"] = this.handleMouseDown.bind(this);
-    this.listeners["mouseup"] = this.handleMouseUp.bind(this);
+    this.listeners["mousemove"] = this.handlePointerMove.bind(this);
+    this.listeners["mousedown"] = this.handlePointerDown.bind(this);
+    this.listeners["mouseup"] = this.handlePointerUp.bind(this);
     this.listeners["wheel"] = this.handleScrollWheel.bind(this);
 
     this.canvasElement.addEventListener(
-      "mousemove",
+      "pointermove",
       this.listeners["mousemove"]
     );
     this.canvasElement.addEventListener(
-      "mousedown",
+      "pointerdown",
       this.listeners["mousedown"]
     );
-    this.canvasElement.addEventListener("mouseup", this.listeners["mouseup"]);
+    this.canvasElement.addEventListener("pointerup", this.listeners["mouseup"]);
     this.canvasElement.addEventListener("wheel", this.listeners["wheel"]);
   }
 
   removeListener() {
     this.canvasElement.removeEventListener(
-      "mousemove",
+      "pointermove",
 
       this.listeners["mousemove"]
     );
     this.canvasElement.removeEventListener(
-      "mousedown",
+      "pointerdown",
 
       this.listeners["mousedown"]
     );
     this.canvasElement.removeEventListener(
-      "mouseup",
+      "pointerup",
       this.listeners["mouseup"]
     );
     this.canvasElement.removeEventListener("wheel", this.listeners["wheel"]);

@@ -11,7 +11,9 @@ module.exports = {
   },
   devtool: "inline-source-map",
   devServer: {
-    static: "./dist",
+    static: {
+      directory: path.join(__dirname, "public"),
+    },
   },
   plugins: [
     new HtmlWebpackPlugin({
