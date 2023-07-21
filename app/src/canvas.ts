@@ -36,6 +36,7 @@ interface iListeners {
 
 class canvas {
   canvasElement: HTMLCanvasElement;
+  context: CanvasRenderingContext2D;
 
   strokes: Array<Array<Array<number>>> = [];
   canDraw = true;
@@ -107,6 +108,32 @@ class canvas {
     }
   }
 
+  handlePointerUp() {
+    this.drawing = false;
+    this.strokes.push(this.points);
+
+    this.points = [];
+
+    this.render();
+  }
+
+  handlePointerMove(e: PointerEvent) {
+    if (this.drawing && this.pageCursorIsOn(e) !== -1) {
+      let rect = (e.target as HTMLElement).getBoundingClientRect();
+      this.points.push([
+        (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
+        (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
+        e.pressure,
+      ]);
+
+      if (!(this.points.length % 10)) {
+        this.render();
+      }
+      // Only render then new line being drawn
+      this.renderStrokes([this.points]);
+    }
+  }
+
   pageCursorIsOn(e: MouseEvent) {
     const TOP_LEFT = [-this.xScroll, -this.yScroll];
     const POS = [
@@ -129,58 +156,25 @@ class canvas {
     return -1;
   }
 
-  handlePointerUp() {
-    this.drawing = false;
-    this.strokes.push(this.points);
-
-    this.points = [];
-
-    window.requestAnimationFrame(this.render.bind(this));
-  }
-
-  handlePointerMove(e: PointerEvent) {
-    if (this.drawing && this.pageCursorIsOn(e) !== -1) {
-      let rect = (e.target as HTMLElement).getBoundingClientRect();
-      this.points.push([
-        (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
-        (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
-        e.pressure,
-      ]);
-
-      if (!(this.points.length % 10)) {
-        this.render();
-      }
-      // Only render then new line being drawn
-      this.renderStrokes([this.points]);
-    }
-  }
-
   canvasScroll(x: number, y: number) {
-    const context = this.canvasElement.getContext("2d");
     this.xScroll += x / this.zoomFactor;
     this.yScroll += y / this.zoomFactor;
 
-    if (context !== null) {
-      context.translate(x / this.zoomFactor, y / this.zoomFactor);
-      this.render();
-    }
+    this.context.translate(x / this.zoomFactor, y / this.zoomFactor);
+    this.render();
   }
 
   canvasZoom(factor: number) {
-    const context = this.canvasElement.getContext("2d");
     this.zoomFactor *= factor;
 
-    if (context !== null) {
-      context.resetTransform();
+    this.context.resetTransform();
 
-      context.scale(this.zoomFactor, this.zoomFactor);
-      context.translate(this.xScroll, this.yScroll);
-      this.render();
-    }
+    this.context.scale(this.zoomFactor, this.zoomFactor);
+    this.context.translate(this.xScroll, this.yScroll);
+    this.render();
   }
 
   renderStrokes(strokes: Array<Array<Array<number>>>) {
-    const context = this.canvasElement.getContext("2d");
     // Find strokes in view
     const strokesToRender = [];
     const TOP_LEFT = [-this.xScroll, -this.yScroll];
@@ -207,12 +201,11 @@ class canvas {
       const pathData = getSvgPathFromStroke(stroke);
 
       let path = new Path2D(pathData);
-      context.fill(path);
+      this.context.fill(path);
     }
   }
 
   renderBackground() {
-    let context = this.canvasElement.getContext("2d");
     let currY = 0;
 
     const TOP_LEFT = [-this.xScroll, -this.yScroll];
@@ -222,15 +215,13 @@ class canvas {
     ];
 
     // Render Backdrop
-    this.canvasElement.getContext("2d").fillStyle = "#333333";
-    this.canvasElement
-      .getContext("2d")
-      .fillRect(
-        TOP_LEFT[0],
-        TOP_LEFT[1],
-        BOTTOM_RIGHT[0] - TOP_LEFT[0],
-        BOTTOM_RIGHT[1] - TOP_LEFT[1]
-      );
+    this.context.fillStyle = "#333333";
+    this.context.fillRect(
+      TOP_LEFT[0],
+      TOP_LEFT[1],
+      BOTTOM_RIGHT[0] - TOP_LEFT[0],
+      BOTTOM_RIGHT[1] - TOP_LEFT[1]
+    );
 
     // Render PDF
     for (let i = 0; i < this.backgrounds.length; i++) {
@@ -240,8 +231,8 @@ class canvas {
         TOP_LEFT[0] < this.backgrounds[i].width &&
         TOP_LEFT[1] < currY + this.backgrounds[i].height
       ) {
-        context.drawImage(this.backgrounds[i], 0, currY);
-        context.strokeRect(
+        this.context.drawImage(this.backgrounds[i], 0, currY);
+        this.context.strokeRect(
           0,
           currY,
           this.backgrounds[i].width,
@@ -250,27 +241,6 @@ class canvas {
       }
       currY += this.backgrounds[i].height;
     }
-  }
-
-  clearCanvas() {
-    const context = this.canvasElement.getContext("2d");
-
-    context.beginPath();
-
-    // Store the current transformation matrix
-    context.save();
-
-    // Use the identity matrix while clearing the canvas
-    context.setTransform(1, 0, 0, 1, 0, 0);
-    context.clearRect(
-      0,
-      0,
-      this.canvasElement.width,
-      this.canvasElement.height
-    );
-
-    // Restore the transform
-    context.restore();
   }
 
   render() {
@@ -282,18 +252,29 @@ class canvas {
     if (this.drawing) this.renderStrokes([this.points]);
   }
 
+  clearCanvas() {
+    this.context.beginPath();
+
+    // Store the current transformation matrix
+    this.context.save();
+
+    // Use the identity matrix while clearing the canvas
+    this.context.setTransform(1, 0, 0, 1, 0, 0);
+    this.context.clearRect(
+      0,
+      0,
+      this.canvasElement.width,
+      this.canvasElement.height
+    );
+
+    // Restore the transform
+    this.context.restore();
+  }
+
   resizeCanvas(width: number, height: number) {
     this.canvasElement.height = height;
     this.canvasElement.width = width;
   }
-
-  constructor(width: number, height: number) {
-    const canvas = document.createElement("canvas");
-    this.canvasElement = canvas;
-
-    this.resizeCanvas(width, height);
-  }
-
   bindListeners() {
     this.listeners["mousemove"] = this.handlePointerMove.bind(this);
     this.listeners["mousedown"] = this.handlePointerDown.bind(this);
@@ -340,17 +321,28 @@ class canvas {
 
   set background(x: Array<string>) {
     for (let i = 0; i < x.length; i++) {
-      let img = new Image();
+      const img = new Image();
       img.src = x[i];
       this.backgrounds.push(img);
     }
 
-    // Ensures that render executes after background is set
-    // I really need to figure out async :(
     setTimeout(() => {
       this.render();
       this.bindListeners();
     }, 1);
+  }
+
+  constructor(width: number, height: number) {
+    const canvas = document.createElement("canvas");
+    this.canvasElement = canvas;
+    const ctx = canvas.getContext("2d");
+    if (ctx !== null) {
+      this.context = ctx;
+    } else {
+      throw new Error("Cannot get canvas context");
+    }
+
+    this.resizeCanvas(width, height);
   }
 }
 
