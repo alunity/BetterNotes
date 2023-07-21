@@ -1,13 +1,5 @@
-import { useEffect } from "react";
 import { getStroke } from "perfect-freehand";
-import getSvgPathFromStroke from "./svgPathFromStroke";
-
-interface iCanvas {
-  element: HTMLCanvasElement | undefined;
-  width: number;
-  height: number;
-  backgrounds: Array<HTMLImageElement>;
-}
+import getSvgPathFromStroke from "./SvgPathFromStroke";
 
 const penOptions = {
   size: 5,
@@ -26,89 +18,175 @@ const penOptions = {
   simulatePressure: false,
 };
 
-function Canvas(props: iCanvas) {
-  let drawing = false;
-  let points: Array<Array<number>> = [];
-  const strokes: Array<Array<Array<number>>> = [];
+// Top left
+// [[-this.xScroll, -this.yScroll]]
 
-  const canDraw = true;
+// Top right
+//   [(this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,-this.yScroll,]
 
-  let xScroll = 0;
-  let yScroll = 0;
-  let zoomFactor = 1;
+// Bottom left
+// [-this.xScroll,(this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,]
 
-  const ZOOM_MULT = 1.25;
-  const SCROLL = 20;
+// Bottom right
+// [(this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,(this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,],
 
-  // const [context, setContext] = useState<CanvasRenderingContext2D>();
-  let context: CanvasRenderingContext2D | undefined;
+interface iListeners {
+  [name: string]: any;
+}
 
-  function handlePointerDown(e: PointerEvent) {
-    if (e.buttons == 1 && canDraw && pageCursorIsOn(e) !== -1) {
-      drawing = true;
-      const rect = (e.target as HTMLElement).getBoundingClientRect();
-      points.push([
-        (e.clientX - rect.left) / zoomFactor - xScroll,
-        (e.clientY - rect.top) / zoomFactor - yScroll,
-        e.pressure,
-      ]);
-      renderStrokes([points]);
-    }
-  }
+class canvas {
+  canvasElement: HTMLCanvasElement;
 
-  function handlePointerMove(e: PointerEvent) {
-    if (drawing && pageCursorIsOn(e) !== -1) {
-      const rect = (e.target as HTMLElement).getBoundingClientRect();
-      points.push([
-        (e.clientX - rect.left) / zoomFactor - xScroll,
-        (e.clientY - rect.top) / zoomFactor - yScroll,
-        e.pressure,
-      ]);
+  strokes: Array<Array<Array<number>>> = [];
+  canDraw = true;
+  drawing = false;
+  points: Array<Array<number>> = [];
 
-      if (!(points.length % 10)) {
-        render();
+  xScroll = 0;
+  yScroll = 0;
+  zoomFactor = 1;
+
+  ZOOM_MULT = 1.25;
+  SCROLL = 20;
+
+  backgrounds: Array<HTMLImageElement> = [];
+
+  listeners: iListeners = {};
+
+  handleScrollWheel(e: WheelEvent) {
+    if (e.deltaY > 0) {
+      // Right, Zoom out, down
+      if (e.shiftKey) {
+        this.canvasScroll(-this.SCROLL, 0);
+      } else if (e.ctrlKey) {
+        // Zoom out
+        this.canvasScroll(
+          -this.canvasElement.width / 2,
+          -this.canvasElement.height / 2
+        );
+        this.canvasZoom(1 / this.ZOOM_MULT);
+        this.canvasScroll(
+          this.canvasElement.width / 2,
+          this.canvasElement.height / 2
+        );
+      } else {
+        this.canvasScroll(0, -this.SCROLL);
       }
-      // Only render then new line being drawn
-      renderStrokes([points]);
+    } else if (e.deltaY < 0) {
+      // Left, Zoom in, up
+      if (e.shiftKey) {
+        this.canvasScroll(this.SCROLL, 0);
+      } else if (e.ctrlKey) {
+        this.canvasScroll(
+          -this.canvasElement.width / 2,
+          -this.canvasElement.height / 2
+        );
+        this.canvasZoom(this.ZOOM_MULT);
+        this.canvasScroll(
+          this.canvasElement.width / 2,
+          this.canvasElement.height / 2
+        );
+      } else {
+        this.canvasScroll(0, this.SCROLL);
+      }
+    }
+
+    e.preventDefault();
+  }
+
+  handlePointerDown(e: PointerEvent) {
+    if (e.buttons == 1 && this.canDraw && this.pageCursorIsOn(e) !== -1) {
+      this.drawing = true;
+      let rect = (e.target as HTMLElement).getBoundingClientRect();
+      this.points.push([
+        (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
+        (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
+        e.pressure,
+      ]);
+      this.renderStrokes([this.points]);
     }
   }
 
-  function handlePointerUp() {
-    drawing = false;
-    strokes.push(points);
-    points = [];
-    render();
-  }
-
-  function pageCursorIsOn(e: MouseEvent) {
-    const TOP_LEFT = [-xScroll, -yScroll];
+  pageCursorIsOn(e: MouseEvent) {
+    const TOP_LEFT = [-this.xScroll, -this.yScroll];
     const POS = [
-      TOP_LEFT[0] + e.clientX / zoomFactor,
-      TOP_LEFT[1] + e.clientY / zoomFactor,
+      TOP_LEFT[0] + e.clientX / this.zoomFactor,
+      TOP_LEFT[1] + e.clientY / this.zoomFactor,
     ];
     let currY = 0;
 
-    for (let i = 0; i < props.backgrounds.length; i++) {
+    for (let i = 0; i < this.backgrounds.length; i++) {
       if (
         POS[0] > 0 &&
         POS[1] > currY &&
-        POS[0] < props.backgrounds[i].width &&
-        POS[1] < currY + props.backgrounds[i].height
+        POS[0] < this.backgrounds[i].width &&
+        POS[1] < currY + this.backgrounds[i].height
       ) {
         return i + 1;
       }
-      currY += props.backgrounds[i].height;
+      currY += this.backgrounds[i].height;
     }
     return -1;
   }
 
-  function renderStrokes(strokes: Array<Array<Array<number>>>) {
+  handlePointerUp() {
+    this.drawing = false;
+    this.strokes.push(this.points);
+
+    this.points = [];
+
+    window.requestAnimationFrame(this.render.bind(this));
+  }
+
+  handlePointerMove(e: PointerEvent) {
+    if (this.drawing && this.pageCursorIsOn(e) !== -1) {
+      let rect = (e.target as HTMLElement).getBoundingClientRect();
+      this.points.push([
+        (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
+        (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
+        e.pressure,
+      ]);
+
+      if (!(this.points.length % 10)) {
+        this.render();
+      }
+      // Only render then new line being drawn
+      this.renderStrokes([this.points]);
+    }
+  }
+
+  canvasScroll(x: number, y: number) {
+    const context = this.canvasElement.getContext("2d");
+    this.xScroll += x / this.zoomFactor;
+    this.yScroll += y / this.zoomFactor;
+
+    if (context !== null) {
+      context.translate(x / this.zoomFactor, y / this.zoomFactor);
+      this.render();
+    }
+  }
+
+  canvasZoom(factor: number) {
+    const context = this.canvasElement.getContext("2d");
+    this.zoomFactor *= factor;
+
+    if (context !== null) {
+      context.resetTransform();
+
+      context.scale(this.zoomFactor, this.zoomFactor);
+      context.translate(this.xScroll, this.yScroll);
+      this.render();
+    }
+  }
+
+  renderStrokes(strokes: Array<Array<Array<number>>>) {
+    const context = this.canvasElement.getContext("2d");
     // Find strokes in view
     const strokesToRender = [];
-    const TOP_LEFT = [-xScroll, -yScroll];
+    const TOP_LEFT = [-this.xScroll, -this.yScroll];
     const BOTTOM_RIGHT = [
-      (props.width * 1) / zoomFactor - xScroll,
-      (props.height * 1) / zoomFactor - yScroll,
+      (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,
+      (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,
     ];
     for (let i = 0; i < strokes.length; i++) {
       for (let j = 0; j < strokes[i].length; j++) {
@@ -123,183 +201,157 @@ function Canvas(props: iCanvas) {
         }
       }
     }
+
     for (let i = 0; i < strokesToRender.length; i++) {
       const stroke = getStroke(strokesToRender[i], penOptions);
       const pathData = getSvgPathFromStroke(stroke);
 
-      const path = new Path2D(pathData);
-      context?.fill(path);
+      let path = new Path2D(pathData);
+      context.fill(path);
     }
   }
 
-  function renderBackground() {
+  renderBackground() {
+    let context = this.canvasElement.getContext("2d");
     let currY = 0;
 
-    const TOP_LEFT = [-xScroll, -yScroll];
+    const TOP_LEFT = [-this.xScroll, -this.yScroll];
     const BOTTOM_RIGHT = [
-      (props.width * 1) / zoomFactor - xScroll,
-      (props.height * 1) / zoomFactor - yScroll,
+      (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,
+      (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,
     ];
 
     // Render Backdrop
-    if (context !== undefined) {
-      context.fillStyle = "#333333";
-      context.fillRect(
+    this.canvasElement.getContext("2d").fillStyle = "#333333";
+    this.canvasElement
+      .getContext("2d")
+      .fillRect(
         TOP_LEFT[0],
         TOP_LEFT[1],
         BOTTOM_RIGHT[0] - TOP_LEFT[0],
         BOTTOM_RIGHT[1] - TOP_LEFT[1]
       );
-      // Render PDF
-      for (let i = 0; i < props.backgrounds.length; i++) {
-        if (
-          BOTTOM_RIGHT[0] > 0 &&
-          BOTTOM_RIGHT[1] > currY &&
-          TOP_LEFT[0] < props.backgrounds[i].width &&
-          TOP_LEFT[1] < currY + props.backgrounds[i].height
-        ) {
-          context.drawImage(props.backgrounds[i], 0, currY);
-          context.strokeRect(
-            0,
-            currY,
-            props.backgrounds[i].width,
-            props.backgrounds[i].height
-          );
-        }
-        currY += props.backgrounds[i].height;
+
+    // Render PDF
+    for (let i = 0; i < this.backgrounds.length; i++) {
+      if (
+        BOTTOM_RIGHT[0] > 0 &&
+        BOTTOM_RIGHT[1] > currY &&
+        TOP_LEFT[0] < this.backgrounds[i].width &&
+        TOP_LEFT[1] < currY + this.backgrounds[i].height
+      ) {
+        context.drawImage(this.backgrounds[i], 0, currY);
+        context.strokeRect(
+          0,
+          currY,
+          this.backgrounds[i].width,
+          this.backgrounds[i].height
+        );
       }
+      currY += this.backgrounds[i].height;
     }
   }
 
-  function handleScrollWheel(e: WheelEvent) {
-    if (e.deltaY > 0) {
-      // Right, Zoom out, down
-      if (e.shiftKey) {
-        canvasScroll(-SCROLL, 0);
-      } else if (e.ctrlKey) {
-        // Zoom out
-        // canvasScroll(-props.width / 2, -props.height / 2);
-        canvasScroll(-e.clientX, -e.clientY);
-        canvasZoom(1 / ZOOM_MULT);
-        canvasScroll(e.clientX, e.clientY);
-        // canvasScroll(props.width / 2, props.height / 2);
-      } else {
-        canvasScroll(0, -SCROLL);
-      }
-    } else if (e.deltaY < 0) {
-      // Left, Zoom in, up
-      if (e.shiftKey) {
-        canvasScroll(SCROLL, 0);
-      } else if (e.ctrlKey) {
-        // canvasScroll(-props.width / 2, -props.height / 2);
-        canvasScroll(-e.clientX, -e.clientY);
-        canvasZoom(ZOOM_MULT);
-        canvasScroll(e.clientX, e.clientY);
-        // canvasScroll(props.width / 2, props.height / 2);
-      } else {
-        canvasScroll(0, SCROLL);
-      }
-    }
+  clearCanvas() {
+    const context = this.canvasElement.getContext("2d");
 
-    e.preventDefault();
-  }
-
-  function canvasScroll(x: number, y: number) {
-    xScroll += x / zoomFactor;
-    yScroll += y / zoomFactor;
-
-    context?.translate(x / zoomFactor, y / zoomFactor);
-    render();
-    // window.requestAnimationFrame(this.render.bind(this));
-  }
-
-  function canvasZoom(factor: number) {
-    zoomFactor *= factor;
-
-    context?.resetTransform();
-
-    context?.scale(zoomFactor, zoomFactor);
-    context?.translate(xScroll, yScroll);
-    render();
-  }
-
-  function clearCanvas() {
-    context?.beginPath();
+    context.beginPath();
 
     // Store the current transformation matrix
-    context?.save();
+    context.save();
 
     // Use the identity matrix while clearing the canvas
-    context?.setTransform(1, 0, 0, 1, 0, 0);
-    context?.clearRect(0, 0, props.width, props.height);
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(
+      0,
+      0,
+      this.canvasElement.width,
+      this.canvasElement.height
+    );
 
     // Restore the transform
-    context?.restore();
+    context.restore();
   }
 
-  function render() {
-    clearCanvas();
+  render() {
+    this.clearCanvas();
 
-    renderBackground();
+    this.renderBackground();
 
-    renderStrokes(strokes);
-    if (drawing) renderStrokes([points]);
+    this.renderStrokes(this.strokes);
+    if (this.drawing) this.renderStrokes([this.points]);
   }
 
-  useEffect(() => {
-    if (props.element !== undefined) {
-      const ctx = props.element.getContext("2d");
-      if (ctx !== null && ctx !== undefined) {
-        context = ctx;
+  resizeCanvas(width: number, height: number) {
+    this.canvasElement.height = height;
+    this.canvasElement.width = width;
+  }
 
-        props.element.addEventListener("pointermove", handlePointerMove);
-        props.element.addEventListener("pointerup", handlePointerUp);
-        props.element.addEventListener("pointerdown", handlePointerDown);
-        props.element.addEventListener("wheel", handleScrollWheel);
+  constructor(width: number, height: number) {
+    const canvas = document.createElement("canvas");
+    this.canvasElement = canvas;
 
-        setTimeout(() => {
-          render();
-        }, 1);
+    this.resizeCanvas(width, height);
+  }
 
-        return () => {
-          if (props.element !== undefined) {
-            props.element.removeEventListener("pointermove", handlePointerMove);
-            props.element.removeEventListener("pointerup", handlePointerUp);
-            props.element.removeEventListener("pointerdown", handlePointerDown);
-            props.element.removeEventListener("wheel", handleScrollWheel);
-          }
-        };
-      }
-    } else {
-      context = undefined;
+  bindListeners() {
+    this.listeners["mousemove"] = this.handlePointerMove.bind(this);
+    this.listeners["mousedown"] = this.handlePointerDown.bind(this);
+    this.listeners["mouseup"] = this.handlePointerUp.bind(this);
+    this.listeners["wheel"] = this.handleScrollWheel.bind(this);
+
+    this.canvasElement.addEventListener(
+      "pointermove",
+      this.listeners["mousemove"]
+    );
+    this.canvasElement.addEventListener(
+      "pointerdown",
+      this.listeners["mousedown"]
+    );
+    this.canvasElement.addEventListener("pointerup", this.listeners["mouseup"]);
+    this.canvasElement.addEventListener("wheel", this.listeners["wheel"]);
+  }
+
+  removeListener() {
+    this.canvasElement.removeEventListener(
+      "pointermove",
+
+      this.listeners["mousemove"]
+    );
+    this.canvasElement.removeEventListener(
+      "pointerdown",
+
+      this.listeners["mousedown"]
+    );
+    this.canvasElement.removeEventListener(
+      "pointerup",
+      this.listeners["mouseup"]
+    );
+    this.canvasElement.removeEventListener("wheel", this.listeners["wheel"]);
+  }
+
+  get element() {
+    return this.canvasElement;
+  }
+
+  set allowedToDraw(value: boolean) {
+    this.canDraw = value;
+  }
+
+  set background(x: Array<string>) {
+    for (let i = 0; i < x.length; i++) {
+      let img = new Image();
+      img.src = x[i];
+      this.backgrounds.push(img);
     }
-  }, [props.element]);
 
-  // useEffect(() => {
-  //   if (context !== undefined) {
-  //     if (props.element !== undefined && props.backgrounds.length !== 0) {
-  //       props.element.addEventListener("pointermove", handlePointerMove);
-  //       props.element.addEventListener("pointerup", handlePointerUp);
-  //       props.element.addEventListener("pointerdown", handlePointerDown);
-  //       props.element.addEventListener("wheel", handleScrollWheel);
-
-  //       setTimeout(() => {
-  //         render();
-  //       }, 1);
-
-  //       return () => {
-  //         if (props.element !== undefined) {
-  //           props.element.removeEventListener("pointermove", handlePointerMove);
-  //           props.element.removeEventListener("pointerup", handlePointerUp);
-  //           props.element.removeEventListener("pointerdown", handlePointerDown);
-  //           props.element.removeEventListener("wheel", handleScrollWheel);
-  //         }
-  //       };
-  //     }
-  //   }
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [context]);
-  return null;
+    // Ensures that render executes after background is set
+    // I really need to figure out async :(
+    setTimeout(() => {
+      this.render();
+      this.bindListeners();
+    }, 1);
+  }
 }
 
-export default Canvas;
+export default canvas;
