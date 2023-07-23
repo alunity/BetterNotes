@@ -53,10 +53,12 @@ class canvas {
   yScroll = 0;
   zoomFactor = 1;
 
-  ZOOM_MULT = 1.25;
-  SCROLL = 20;
+  ZOOM_MULT = 1.1;
+  SCROLL = 50;
 
-  INTERPOLATEDIST = 10;
+  SCROLL_DECEL = 0.8;
+
+  INTERPOLATE_DIST = 10;
   linearInterpolation = true;
 
   backgrounds: Array<HTMLImageElement> = [];
@@ -69,37 +71,23 @@ class canvas {
     if (e.deltaY > 0) {
       // Right, Zoom out, down
       if (e.shiftKey) {
-        this.canvasScroll(-this.SCROLL, 0);
+        this.smoothScroll(performance.now(), -this.SCROLL, 0);
       } else if (e.ctrlKey) {
         // Zoom out
-        this.canvasScroll(
-          -this.canvasElement.width / 2,
-          -this.canvasElement.height / 2
-        );
-        this.canvasZoom(1 / this.ZOOM_MULT);
-        this.canvasScroll(
-          this.canvasElement.width / 2,
-          this.canvasElement.height / 2
-        );
+
+        // this.canvasZoom(1 / this.ZOOM_MULT);
+        this.smoothZoom(performance.now(), 1 / this.ZOOM_MULT);
       } else {
-        this.canvasScroll(0, -this.SCROLL);
+        this.smoothScroll(performance.now(), 0, -this.SCROLL);
       }
     } else if (e.deltaY < 0) {
       // Left, Zoom in, up
       if (e.shiftKey) {
-        this.canvasScroll(this.SCROLL, 0);
+        this.smoothScroll(performance.now(), this.SCROLL, 0);
       } else if (e.ctrlKey) {
-        this.canvasScroll(
-          -this.canvasElement.width / 2,
-          -this.canvasElement.height / 2
-        );
-        this.canvasZoom(this.ZOOM_MULT);
-        this.canvasScroll(
-          this.canvasElement.width / 2,
-          this.canvasElement.height / 2
-        );
+        this.smoothZoom(performance.now(), this.ZOOM_MULT);
       } else {
-        this.canvasScroll(0, this.SCROLL);
+        this.smoothScroll(performance.now(), 0, this.SCROLL);
       }
     }
 
@@ -141,7 +129,7 @@ class canvas {
 
       // Interpolation
       if (
-        dist > this.INTERPOLATEDIST / this.zoomFactor &&
+        dist > this.INTERPOLATE_DIST / this.zoomFactor &&
         this.linearInterpolation
       ) {
         const dx =
@@ -154,12 +142,12 @@ class canvas {
           this.yScroll -
           this.points[this.points.length - 1][1];
 
-        for (let i = 0; i < Math.floor(dist / this.INTERPOLATEDIST); i++) {
+        for (let i = 0; i < Math.floor(dist / this.INTERPOLATE_DIST); i++) {
           this.points.push([
             this.points[this.points.length - 1][0] +
-              dx / Math.floor(dist / this.INTERPOLATEDIST),
+              dx / Math.floor(dist / this.INTERPOLATE_DIST),
             this.points[this.points.length - 1][1] +
-              dy / Math.floor(dist / this.INTERPOLATEDIST),
+              dy / Math.floor(dist / this.INTERPOLATE_DIST),
           ]);
         }
       }
@@ -200,6 +188,64 @@ class canvas {
     return -1;
   }
 
+  smoothScroll(
+    x: DOMHighResTimeStamp,
+    distX: number,
+    distY: number,
+    conv = false
+  ) {
+    if (!conv) {
+      // Adjusts params so that the total distance traveled is equal to the values given
+      // Geometric sequence
+
+      distY = (distY * (1 - this.SCROLL_DECEL)) / this.SCROLL_DECEL;
+      distX = (distX * (1 - this.SCROLL_DECEL)) / this.SCROLL_DECEL;
+    }
+
+    this.canvasScroll(distX, distY);
+    distY *= this.SCROLL_DECEL;
+    distX *= this.SCROLL_DECEL;
+
+    if (Math.abs(distY) < 0.001 && Math.abs(distX) < 0.001) {
+      return;
+    }
+
+    requestAnimationFrame(this.smoothScroll.bind(this, x, distX, distY, true));
+  }
+
+  smoothZoom(x: DOMHighResTimeStamp, vel: number, conv = false) {
+    const lb = 0.99;
+    const ub = 1.01;
+
+    const decel = 0.99;
+
+    if (!conv) {
+      let bound = 1;
+      if (vel > 1) {
+        bound = 1.1;
+      } else if (vel < 1) {
+        bound = 0.9;
+      }
+      console.log(
+        Math.floor(Math.abs(Math.log(bound / vel) / Math.log(decel)))
+      );
+    }
+
+    this.canvasZoom(vel);
+
+    if (vel > 1) {
+      vel *= decel;
+    } else if (vel < 1) {
+      vel /= decel;
+    }
+
+    if (vel > lb && vel < ub) {
+      return;
+    }
+
+    requestAnimationFrame(this.smoothZoom.bind(this, x, vel, true));
+  }
+
   canvasScroll(x: number, y: number) {
     this.xScroll += x / this.zoomFactor;
     this.yScroll += y / this.zoomFactor;
@@ -208,7 +254,12 @@ class canvas {
     this.render();
   }
 
-  canvasZoom(factor: number) {
+  canvasZoom(
+    factor: number,
+    x = this.canvasElement.width / 2,
+    y = this.canvasElement.height / 2
+  ) {
+    this.canvasScroll(-x, -y);
     this.zoomFactor *= factor;
 
     this.context.resetTransform();
@@ -216,6 +267,7 @@ class canvas {
     this.context.scale(this.zoomFactor, this.zoomFactor);
     this.context.translate(this.xScroll, this.yScroll);
     this.render();
+    this.canvasScroll(x, y);
   }
 
   renderStrokes(strokes: Array<Array<Array<number>>>) {
@@ -242,9 +294,10 @@ class canvas {
 
     for (let i = 0; i < strokesToRender.length; i++) {
       const stroke = getStroke(strokesToRender[i], penOptions);
+      // const stroke = strokesToRender[i]
       const pathData = getSvgPathFromStroke(stroke);
 
-      this.context.fillStyle = "#FFFFFF";
+      this.context.fillStyle = "#000000";
       const path = new Path2D(pathData);
       this.context.fill(path);
 
