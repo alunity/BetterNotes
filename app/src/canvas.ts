@@ -213,23 +213,11 @@ class canvas {
     requestAnimationFrame(this.smoothScroll.bind(this, x, distX, distY, true));
   }
 
-  smoothZoom(x: DOMHighResTimeStamp, vel: number, conv = false) {
+  smoothZoom(x: DOMHighResTimeStamp, vel: number) {
     const lb = 0.99;
     const ub = 1.01;
 
     const decel = 0.99;
-
-    if (!conv) {
-      let bound = 1;
-      if (vel > 1) {
-        bound = 1.1;
-      } else if (vel < 1) {
-        bound = 0.9;
-      }
-      console.log(
-        Math.floor(Math.abs(Math.log(bound / vel) / Math.log(decel)))
-      );
-    }
 
     this.canvasZoom(vel);
 
@@ -243,7 +231,7 @@ class canvas {
       return;
     }
 
-    requestAnimationFrame(this.smoothZoom.bind(this, x, vel, true));
+    requestAnimationFrame(this.smoothZoom.bind(this, x, vel));
   }
 
   canvasScroll(x: number, y: number) {
