@@ -34,6 +34,12 @@ interface iListeners {
   [name: string]: any;
 }
 
+function pytag(x_1: number, y_1: number, x_2: number, y_2: number) {
+  const dx = x_2 - x_1;
+  const dy = y_2 - y_1;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
 class canvas {
   canvasElement: HTMLCanvasElement;
   context: CanvasRenderingContext2D;
@@ -50,9 +56,14 @@ class canvas {
   ZOOM_MULT = 1.25;
   SCROLL = 20;
 
+  INTERPOLATEDIST = 10;
+  linearInterpolation = true;
+
   backgrounds: Array<HTMLImageElement> = [];
 
   listeners: iListeners = {};
+
+  debug = false;
 
   handleScrollWheel(e: WheelEvent) {
     if (e.deltaY > 0) {
@@ -120,6 +131,39 @@ class canvas {
   handlePointerMove(e: PointerEvent) {
     if (this.drawing && this.pageCursorIsOn(e) !== -1) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
+
+      const dist = pytag(
+        (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
+        (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
+        this.points[this.points.length - 1][0],
+        this.points[this.points.length - 1][1]
+      );
+
+      // Interpolation
+      if (
+        dist > this.INTERPOLATEDIST / this.zoomFactor &&
+        this.linearInterpolation
+      ) {
+        const dx =
+          (e.clientX - rect.left) / this.zoomFactor -
+          this.xScroll -
+          this.points[this.points.length - 1][0];
+
+        const dy =
+          (e.clientY - rect.top) / this.zoomFactor -
+          this.yScroll -
+          this.points[this.points.length - 1][1];
+
+        for (let i = 0; i < Math.floor(dist / this.INTERPOLATEDIST); i++) {
+          this.points.push([
+            this.points[this.points.length - 1][0] +
+              dx / Math.floor(dist / this.INTERPOLATEDIST),
+            this.points[this.points.length - 1][1] +
+              dy / Math.floor(dist / this.INTERPOLATEDIST),
+          ]);
+        }
+      }
+
       this.points.push([
         (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
         (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
@@ -200,8 +244,21 @@ class canvas {
       const stroke = getStroke(strokesToRender[i], penOptions);
       const pathData = getSvgPathFromStroke(stroke);
 
-      let path = new Path2D(pathData);
+      this.context.fillStyle = "#FFFFFF";
+      const path = new Path2D(pathData);
       this.context.fill(path);
+
+      if (this.debug) {
+        for (let j = 0; j < strokesToRender[i].length; j++) {
+          const stroke = getStroke([strokesToRender[i][j]], { ...penOptions });
+          const pathData = getSvgPathFromStroke(stroke);
+          const path = new Path2D(pathData);
+
+          this.context.fillStyle = "#FF0000";
+
+          this.context.fill(path);
+        }
+      }
     }
   }
 
