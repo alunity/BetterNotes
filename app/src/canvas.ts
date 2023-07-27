@@ -1,5 +1,5 @@
 import { getStroke } from "perfect-freehand";
-import getSvgPathFromStroke from "./SvgPathFromStroke";
+import getSvgPathFromStroke from "./svgPathFromStroke";
 
 const penOptions = {
   size: 5,
@@ -40,11 +40,16 @@ function pytag(x_1: number, y_1: number, x_2: number, y_2: number) {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+interface iStrokes {
+  points: Array<Array<number>>;
+  path: Path2D;
+}
+
 class canvas {
   canvasElement: HTMLCanvasElement;
   context: CanvasRenderingContext2D;
 
-  strokes: Array<Array<Array<number>>> = [];
+  strokes: Array<iStrokes> = [];
   canDraw = true;
   drawing = false;
   points: Array<Array<number>> = [];
@@ -55,6 +60,8 @@ class canvas {
 
   ZOOM_MULT = 1.1;
   SCROLL = 50;
+
+  SMOOTH = true;
 
   SCROLL_DECEL = 0.8;
 
@@ -71,23 +78,45 @@ class canvas {
     if (e.deltaY > 0) {
       // Right, Zoom out, down
       if (e.shiftKey) {
-        this.smoothScroll(performance.now(), -this.SCROLL, 0);
+        if (this.SMOOTH) {
+          this.smoothScroll(performance.now(), -this.SCROLL, 0);
+        } else {
+          this.canvasScroll(-this.SCROLL, 0);
+        }
       } else if (e.ctrlKey) {
         // Zoom out
-
-        // this.canvasZoom(1 / this.ZOOM_MULT);
-        this.smoothZoom(performance.now(), 1 / this.ZOOM_MULT);
+        if (this.SMOOTH) {
+          this.smoothZoom(performance.now(), 1 / this.ZOOM_MULT);
+        } else {
+          this.canvasZoom(1 / this.ZOOM_MULT);
+        }
       } else {
-        this.smoothScroll(performance.now(), 0, -this.SCROLL);
+        if (this.SMOOTH) {
+          this.smoothScroll(performance.now(), 0, -this.SCROLL);
+        } else {
+          this.canvasScroll(0, -this.SCROLL);
+        }
       }
     } else if (e.deltaY < 0) {
       // Left, Zoom in, up
       if (e.shiftKey) {
-        this.smoothScroll(performance.now(), this.SCROLL, 0);
+        if (this.SMOOTH) {
+          this.smoothScroll(performance.now(), this.SCROLL, 0);
+        } else {
+          this.canvasScroll(this.SCROLL, 0);
+        }
       } else if (e.ctrlKey) {
-        this.smoothZoom(performance.now(), this.ZOOM_MULT);
+        if (this.SMOOTH) {
+          this.smoothZoom(performance.now(), this.ZOOM_MULT);
+        } else {
+          this.canvasZoom(this.ZOOM_MULT);
+        }
       } else {
-        this.smoothScroll(performance.now(), 0, this.SCROLL);
+        if (this.SMOOTH) {
+          this.smoothScroll(performance.now(), 0, this.SCROLL);
+        } else {
+          this.canvasScroll(0, this.SCROLL);
+        }
       }
     }
 
@@ -103,13 +132,25 @@ class canvas {
         (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
         e.pressure,
       ]);
-      this.renderStrokes([this.points]);
+      this.renderStrokes([
+        {
+          points: this.points,
+          path: new Path2D(
+            getSvgPathFromStroke(getStroke(this.points, penOptions))
+          ),
+        },
+      ]);
     }
   }
 
   handlePointerUp() {
     this.drawing = false;
-    this.strokes.push(this.points);
+    this.strokes.push({
+      points: this.points,
+      path: new Path2D(
+        getSvgPathFromStroke(getStroke(this.points, penOptions))
+      ),
+    });
 
     this.points = [];
 
@@ -162,7 +203,14 @@ class canvas {
         this.render();
       }
       // Only render then new line being drawn
-      this.renderStrokes([this.points]);
+      this.renderStrokes([
+        {
+          points: this.points,
+          path: new Path2D(
+            getSvgPathFromStroke(getStroke(this.points, penOptions))
+          ),
+        },
+      ]);
     }
   }
 
@@ -258,7 +306,7 @@ class canvas {
     this.canvasScroll(x, y);
   }
 
-  renderStrokes(strokes: Array<Array<Array<number>>>) {
+  renderStrokes(strokes: Array<iStrokes>) {
     // Find strokes in view
     const strokesToRender = [];
     const TOP_LEFT = [-this.xScroll, -this.yScroll];
@@ -267,12 +315,12 @@ class canvas {
       (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,
     ];
     for (let i = 0; i < strokes.length; i++) {
-      for (let j = 0; j < strokes[i].length; j++) {
+      for (let j = 0; j < strokes[i].points.length; j++) {
         if (
-          strokes[i][j][0] > TOP_LEFT[0] &&
-          strokes[i][j][1] > TOP_LEFT[1] &&
-          strokes[i][j][0] < BOTTOM_RIGHT[0] &&
-          strokes[i][j][1] < BOTTOM_RIGHT[1]
+          strokes[i].points[j][0] > TOP_LEFT[0] &&
+          strokes[i].points[j][1] > TOP_LEFT[1] &&
+          strokes[i].points[j][0] < BOTTOM_RIGHT[0] &&
+          strokes[i].points[j][1] < BOTTOM_RIGHT[1]
         ) {
           strokesToRender.push(strokes[i]);
           break;
@@ -281,17 +329,20 @@ class canvas {
     }
 
     for (let i = 0; i < strokesToRender.length; i++) {
-      const stroke = getStroke(strokesToRender[i], penOptions);
-      // const stroke = strokesToRender[i]
-      const pathData = getSvgPathFromStroke(stroke);
+      // const stroke = getStroke(strokesToRender[i], penOptions);
+      // const stroke = strokesToRender[i];
+      // const pathData = getSvgPathFromStroke(stroke);
 
       this.context.fillStyle = "#000000";
-      const path = new Path2D(pathData);
-      this.context.fill(path);
+      // const path = new Path2D(strokesToRender[i].svg);
+      this.context.fill(strokesToRender[i].path);
 
       if (this.debug) {
-        for (let j = 0; j < strokesToRender[i].length; j++) {
-          const stroke = getStroke([strokesToRender[i][j]], { ...penOptions });
+        // Instantiating Path2D is very expensive (Hence this lags)
+        for (let j = 0; j < strokesToRender[i].points.length; j++) {
+          const stroke = getStroke([strokesToRender[i].points[j]], {
+            ...penOptions,
+          });
           const pathData = getSvgPathFromStroke(stroke);
           const path = new Path2D(pathData);
 
@@ -347,7 +398,15 @@ class canvas {
     this.renderBackground();
 
     this.renderStrokes(this.strokes);
-    if (this.drawing) this.renderStrokes([this.points]);
+    if (this.drawing)
+      this.renderStrokes([
+        {
+          points: this.points,
+          path: new Path2D(
+            getSvgPathFromStroke(getStroke(this.points, penOptions))
+          ),
+        },
+      ]);
   }
 
   clearCanvas() {
