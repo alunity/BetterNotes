@@ -24,6 +24,9 @@ const penOptions = {
 // Top right
 //   [(this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,-this.yScroll,]
 
+// Center
+//   [(this.canvasElement.width  / this.zoomFactor)/2 - (this.xScroll), (this.canvasElement.height  / this.zoomFactor)/2 - (this.yScroll)]
+
 // Bottom left
 // [-this.xScroll,(this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,]
 
@@ -56,14 +59,15 @@ class canvas {
 
   xScroll = 0;
   yScroll = 0;
-  zoomFactor = 1;
-
-  ZOOM_MULT = 1.1;
+  SCROLL_DECEL = 0.8;
   SCROLL = 50;
 
-  SMOOTH = true;
+  zoomFactor = 1;
+  ZOOM_MULT = 1.1;
+  ZOOM_MIN = 0.5;
+  ZOOM_MAX = 10;
 
-  SCROLL_DECEL = 0.8;
+  SMOOTH = true;
 
   INTERPOLATE_DIST = 10;
   linearInterpolation = true;
@@ -78,44 +82,74 @@ class canvas {
     if (e.deltaY > 0) {
       // Right, Zoom out, down
       if (e.shiftKey) {
-        if (this.SMOOTH) {
-          this.smoothScroll(performance.now(), -this.SCROLL, 0);
-        } else {
-          this.canvasScroll(-this.SCROLL, 0);
+        if (
+          (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll <
+          this.backgrounds[0].width
+        ) {
+          if (this.SMOOTH) {
+            this.smoothScroll(performance.now(), -this.SCROLL, 0);
+          } else {
+            this.canvasScroll(-this.SCROLL, 0);
+          }
         }
       } else if (e.ctrlKey) {
         // Zoom out
-        if (this.SMOOTH) {
-          this.smoothZoom(performance.now(), 1 / this.ZOOM_MULT);
-        } else {
-          this.canvasZoom(1 / this.ZOOM_MULT);
+        if (this.zoomFactor > this.ZOOM_MIN) {
+          if (this.SMOOTH) {
+            this.smoothZoom(performance.now(), 1 / this.ZOOM_MULT);
+          } else {
+            this.canvasZoom(1 / this.ZOOM_MULT);
+            if (
+              this.canvasElement.width / this.zoomFactor >
+              this.backgrounds[0].width
+            ) {
+              this.canvasHorizontallyCenter();
+            }
+          }
         }
       } else {
-        if (this.SMOOTH) {
-          this.smoothScroll(performance.now(), 0, -this.SCROLL);
-        } else {
-          this.canvasScroll(0, -this.SCROLL);
+        if (
+          (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll <
+          this.documentHeight
+        ) {
+          if (this.SMOOTH) {
+            this.smoothScroll(performance.now(), 0, -this.SCROLL);
+          } else {
+            this.canvasScroll(0, -this.SCROLL);
+          }
         }
       }
     } else if (e.deltaY < 0) {
       // Left, Zoom in, up
       if (e.shiftKey) {
-        if (this.SMOOTH) {
-          this.smoothScroll(performance.now(), this.SCROLL, 0);
-        } else {
-          this.canvasScroll(this.SCROLL, 0);
+        if (-this.xScroll > 0) {
+          if (this.SMOOTH) {
+            this.smoothScroll(performance.now(), this.SCROLL, 0);
+          } else {
+            this.canvasScroll(this.SCROLL, 0);
+          }
         }
       } else if (e.ctrlKey) {
-        if (this.SMOOTH) {
-          this.smoothZoom(performance.now(), this.ZOOM_MULT);
-        } else {
-          this.canvasZoom(this.ZOOM_MULT);
+        if (this.zoomFactor < this.ZOOM_MAX) {
+          if (this.SMOOTH) {
+            this.smoothZoom(performance.now(), this.ZOOM_MULT);
+          } else {
+            this.canvasZoom(this.ZOOM_MULT);
+            if (
+              this.canvasElement.width / this.zoomFactor >
+              this.backgrounds[0].width
+            ) {
+              this.canvasHorizontallyCenter();
+            }
+          }
         }
       } else {
-        if (this.SMOOTH) {
-          this.smoothScroll(performance.now(), 0, this.SCROLL);
-        } else {
-          this.canvasScroll(0, this.SCROLL);
+        if (-this.yScroll > 0) {
+          if (this.SMOOTH) {
+            this.smoothScroll(performance.now(), 0, this.SCROLL);
+          } else {
+            this.canvasScroll(0, this.SCROLL);
+          }
         }
       }
     }
@@ -158,7 +192,11 @@ class canvas {
   }
 
   handlePointerMove(e: PointerEvent) {
-    if (this.drawing && this.pageCursorIsOn(e) !== -1) {
+    if (this.pageCursorIsOn(e) === -1) {
+      this.handlePointerUp();
+      return;
+    }
+    if (this.drawing) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
 
       const dist = pytag(
@@ -245,9 +283,8 @@ class canvas {
     if (!conv) {
       // Adjusts params so that the total distance traveled is equal to the values given
       // Geometric sequence
-
-      distY = (distY * (1 - this.SCROLL_DECEL)) / this.SCROLL_DECEL;
-      distX = (distX * (1 - this.SCROLL_DECEL)) / this.SCROLL_DECEL;
+      distY = distY * (1 - this.SCROLL_DECEL);
+      distX = distX * (1 - this.SCROLL_DECEL);
     }
 
     this.canvasScroll(distX, distY);
@@ -276,10 +313,37 @@ class canvas {
     }
 
     if (vel > lb && vel < ub) {
+      if (
+        this.canvasElement.width / this.zoomFactor >
+        this.backgrounds[0].width
+      ) {
+        this.canvasHorizontallyCenter();
+      }
       return;
     }
 
     requestAnimationFrame(this.smoothZoom.bind(this, x, vel));
+  }
+
+  canvasHorizontallyCenter() {
+    if (this.SMOOTH) {
+      this.smoothScroll(
+        performance.now(),
+        (this.canvasElement.width / this.zoomFactor / 2 -
+          this.xScroll -
+          this.backgrounds[0].width / 2) *
+          this.zoomFactor,
+        0
+      );
+    } else {
+      this.canvasScroll(
+        (this.canvasElement.width / this.zoomFactor / 2 -
+          this.xScroll -
+          this.backgrounds[0].width / 2) *
+          this.zoomFactor,
+        0
+      );
+    }
   }
 
   canvasScroll(x: number, y: number) {
@@ -482,11 +546,18 @@ class canvas {
       img.src = x[i];
       this.backgrounds.push(img);
     }
-
     setTimeout(() => {
       this.render();
       this.bindListeners();
     }, 1);
+  }
+
+  get documentHeight() {
+    let sum = 0;
+    for (let i = 0; i < this.backgrounds.length; i++) {
+      sum += this.backgrounds[i].height;
+    }
+    return sum;
   }
 
   constructor(width: number, height: number) {
