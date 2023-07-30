@@ -85,19 +85,7 @@ class canvas {
         this.scroll(-this.SCROLL, 0);
       } else if (e.ctrlKey) {
         // Zoom out
-        if (this.zoomFactor > this.ZOOM_MIN) {
-          if (this.SMOOTH) {
-            this.smoothCanvasZoom(performance.now(), 1 / this.ZOOM_MULT);
-          } else {
-            this.canvasZoom(1 / this.ZOOM_MULT);
-            if (
-              this.canvasElement.width / this.zoomFactor >
-              this.backgrounds[0].width
-            ) {
-              this.canvasHorizontallyCenter();
-            }
-          }
-        }
+        this.zoom(1 / this.ZOOM_MULT, e.clientX, e.clientY);
       } else {
         this.scroll(0, -this.SCROLL);
       }
@@ -106,19 +94,7 @@ class canvas {
       if (e.shiftKey) {
         this.scroll(this.SCROLL, 0);
       } else if (e.ctrlKey) {
-        if (this.zoomFactor < this.ZOOM_MAX) {
-          if (this.SMOOTH) {
-            this.smoothCanvasZoom(performance.now(), this.ZOOM_MULT);
-          } else {
-            this.canvasZoom(this.ZOOM_MULT);
-            if (
-              this.canvasElement.width / this.zoomFactor >
-              this.backgrounds[0].width
-            ) {
-              this.canvasHorizontallyCenter();
-            }
-          }
-        }
+        this.zoom(this.ZOOM_MULT, e.clientX, e.clientY);
       } else {
         this.scroll(0, this.SCROLL);
       }
@@ -222,22 +198,45 @@ class canvas {
     }
   }
 
-  lastX = 0;
-  lastY = 0;
+  lastTouchPosition: Array<number> = [];
+  lastDist = 0;
 
   handleTouchStart(e: TouchEvent) {
-    this.lastX = e.touches[0].clientX;
-    this.lastY = e.touches[0].clientY;
+    this.lastTouchPosition = [e.touches[0].clientX, e.touches[0].clientY];
+    if (e.touches.length === 2) {
+      this.lastDist = pytag(
+        e.touches[0].clientX,
+        e.touches[0].clientY,
+        e.touches[1].clientX,
+        e.touches[1].clientY
+      );
+    }
   }
 
   handleTouchMove(e: TouchEvent) {
-    const dx = e.touches[0].clientX - this.lastX;
-    const dy = e.touches[0].clientY - this.lastY;
+    const dx = e.touches[0].clientX - this.lastTouchPosition[0];
+    const dy = e.touches[0].clientY - this.lastTouchPosition[1];
 
-    this.lastX = e.touches[0].clientX;
-    this.lastY = e.touches[0].clientY;
+    this.lastTouchPosition[0] = e.touches[0].clientX;
+    this.lastTouchPosition[1] = e.touches[0].clientY;
 
     this.scroll(dx, dy);
+    if (e.touches.length === 2) {
+      const dist = pytag(
+        e.touches[0].clientX,
+        e.touches[0].clientY,
+        e.touches[1].clientX,
+        e.touches[1].clientY
+      );
+
+      this.zoom(
+        dist / this.lastDist,
+        (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        (e.touches[0].clientY + e.touches[1].clientY) / 2
+      );
+
+      this.lastDist = dist;
+    }
   }
 
   pageCursorIsOn(e: MouseEvent) {
@@ -289,18 +288,34 @@ class canvas {
     }
 
     if (this.SMOOTH) {
-      this.smoothCanvasScroll(performance.now(), x, y);
+      this.smoothCanvasScroll(x, y);
     } else {
       this.canvasScroll(x, y);
     }
   }
 
-  smoothCanvasScroll(
-    x: DOMHighResTimeStamp,
-    distX: number,
-    distY: number,
-    conv = false
+  zoom(
+    factor: number,
+    x = this.canvasElement.width / 2,
+    y = this.canvasElement.height / 2,
+    smooth = this.SMOOTH
   ) {
+    if (this.zoomFactor < this.ZOOM_MIN && factor < 1) return;
+    if (this.zoomFactor > this.ZOOM_MAX && factor > 1) return;
+    if (smooth) {
+      this.smoothCanvasZoom(factor, x, y);
+    } else {
+      this.canvasZoom(factor, x, y);
+      if (
+        this.canvasElement.width / this.zoomFactor >
+        this.backgrounds[0].width
+      ) {
+        this.canvasHorizontallyCenter();
+      }
+    }
+  }
+
+  smoothCanvasScroll(distX: number, distY: number, conv = false) {
     if (!conv) {
       // Adjusts params so that the total distance traveled is equal to the values given
       // Geometric sequence
@@ -317,17 +332,21 @@ class canvas {
     }
 
     requestAnimationFrame(
-      this.smoothCanvasScroll.bind(this, x, distX, distY, true)
+      this.smoothCanvasScroll.bind(this, distX, distY, true)
     );
   }
 
-  smoothCanvasZoom(x: DOMHighResTimeStamp, vel: number) {
+  smoothCanvasZoom(
+    vel: number,
+    x = this.canvasElement.width / 2,
+    y = this.canvasElement.height / 2
+  ) {
     const lb = 0.99;
     const ub = 1.01;
 
     const decel = 0.99;
 
-    this.canvasZoom(vel);
+    this.canvasZoom(vel, x, y);
 
     if (vel > 1) {
       vel *= decel;
@@ -345,13 +364,12 @@ class canvas {
       return;
     }
 
-    requestAnimationFrame(this.smoothCanvasZoom.bind(this, x, vel));
+    requestAnimationFrame(this.smoothCanvasZoom.bind(this, vel, x, y));
   }
 
   canvasHorizontallyCenter() {
     if (this.SMOOTH) {
       this.smoothCanvasScroll(
-        performance.now(),
         (this.canvasElement.width / this.zoomFactor / 2 -
           this.xScroll -
           this.backgrounds[0].width / 2) *
@@ -416,12 +434,7 @@ class canvas {
     }
 
     for (let i = 0; i < strokesToRender.length; i++) {
-      // const stroke = getStroke(strokesToRender[i], penOptions);
-      // const stroke = strokesToRender[i];
-      // const pathData = getSvgPathFromStroke(stroke);
-
       this.context.fillStyle = "#000000";
-      // const path = new Path2D(strokesToRender[i].svg);
       this.context.fill(strokesToRender[i].path);
 
       if (this.debug) {
