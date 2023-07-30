@@ -82,21 +82,12 @@ class canvas {
     if (e.deltaY > 0) {
       // Right, Zoom out, down
       if (e.shiftKey) {
-        if (
-          (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll <
-          this.backgrounds[0].width
-        ) {
-          if (this.SMOOTH) {
-            this.smoothScroll(performance.now(), -this.SCROLL, 0);
-          } else {
-            this.canvasScroll(-this.SCROLL, 0);
-          }
-        }
+        this.scroll(-this.SCROLL, 0);
       } else if (e.ctrlKey) {
         // Zoom out
         if (this.zoomFactor > this.ZOOM_MIN) {
           if (this.SMOOTH) {
-            this.smoothZoom(performance.now(), 1 / this.ZOOM_MULT);
+            this.smoothCanvasZoom(performance.now(), 1 / this.ZOOM_MULT);
           } else {
             this.canvasZoom(1 / this.ZOOM_MULT);
             if (
@@ -108,31 +99,16 @@ class canvas {
           }
         }
       } else {
-        if (
-          (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll <
-          this.documentHeight
-        ) {
-          if (this.SMOOTH) {
-            this.smoothScroll(performance.now(), 0, -this.SCROLL);
-          } else {
-            this.canvasScroll(0, -this.SCROLL);
-          }
-        }
+        this.scroll(0, -this.SCROLL);
       }
     } else if (e.deltaY < 0) {
       // Left, Zoom in, up
       if (e.shiftKey) {
-        if (-this.xScroll > 0) {
-          if (this.SMOOTH) {
-            this.smoothScroll(performance.now(), this.SCROLL, 0);
-          } else {
-            this.canvasScroll(this.SCROLL, 0);
-          }
-        }
+        this.scroll(this.SCROLL, 0);
       } else if (e.ctrlKey) {
         if (this.zoomFactor < this.ZOOM_MAX) {
           if (this.SMOOTH) {
-            this.smoothZoom(performance.now(), this.ZOOM_MULT);
+            this.smoothCanvasZoom(performance.now(), this.ZOOM_MULT);
           } else {
             this.canvasZoom(this.ZOOM_MULT);
             if (
@@ -144,20 +120,14 @@ class canvas {
           }
         }
       } else {
-        if (-this.yScroll > 0) {
-          if (this.SMOOTH) {
-            this.smoothScroll(performance.now(), 0, this.SCROLL);
-          } else {
-            this.canvasScroll(0, this.SCROLL);
-          }
-        }
+        this.scroll(0, this.SCROLL);
       }
     }
 
     e.preventDefault();
   }
 
-  handlePointerDown(e: PointerEvent) {
+  handleMouseDown(e: PointerEvent) {
     if (e.buttons == 1 && this.canDraw && this.pageCursorIsOn(e) !== -1) {
       this.drawing = true;
       let rect = (e.target as HTMLElement).getBoundingClientRect();
@@ -177,7 +147,7 @@ class canvas {
     }
   }
 
-  handlePointerUp() {
+  handleMouseUp() {
     this.drawing = false;
     this.strokes.push({
       points: this.points,
@@ -191,9 +161,9 @@ class canvas {
     this.render();
   }
 
-  handlePointerMove(e: PointerEvent) {
+  handleMouseMove(e: PointerEvent) {
     if (this.pageCursorIsOn(e) === -1) {
-      this.handlePointerUp();
+      this.handleMouseUp();
       return;
     }
     if (this.drawing) {
@@ -252,6 +222,24 @@ class canvas {
     }
   }
 
+  lastX = 0;
+  lastY = 0;
+
+  handleTouchStart(e: TouchEvent) {
+    this.lastX = e.touches[0].clientX;
+    this.lastY = e.touches[0].clientY;
+  }
+
+  handleTouchMove(e: TouchEvent) {
+    const dx = e.touches[0].clientX - this.lastX;
+    const dy = e.touches[0].clientY - this.lastY;
+
+    this.lastX = e.touches[0].clientX;
+    this.lastY = e.touches[0].clientY;
+
+    this.scroll(dx, dy);
+  }
+
   pageCursorIsOn(e: MouseEvent) {
     const TOP_LEFT = [-this.xScroll, -this.yScroll];
     const POS = [
@@ -274,7 +262,40 @@ class canvas {
     return -1;
   }
 
-  smoothScroll(
+  scroll(x: number, y: number) {
+    if (x < 0) {
+      if (
+        (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll >=
+        this.backgrounds[0].width
+      ) {
+        x = 0;
+      }
+    } else if (x > 0) {
+      if (-this.xScroll <= 0) {
+        x = 0;
+      }
+    }
+    if (y < 0) {
+      if (
+        (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll >=
+        this.documentHeight
+      ) {
+        y = 0;
+      }
+    } else if (y > 0) {
+      if (-this.yScroll <= 0) {
+        y = 0;
+      }
+    }
+
+    if (this.SMOOTH) {
+      this.smoothCanvasScroll(performance.now(), x, y);
+    } else {
+      this.canvasScroll(x, y);
+    }
+  }
+
+  smoothCanvasScroll(
     x: DOMHighResTimeStamp,
     distX: number,
     distY: number,
@@ -295,10 +316,12 @@ class canvas {
       return;
     }
 
-    requestAnimationFrame(this.smoothScroll.bind(this, x, distX, distY, true));
+    requestAnimationFrame(
+      this.smoothCanvasScroll.bind(this, x, distX, distY, true)
+    );
   }
 
-  smoothZoom(x: DOMHighResTimeStamp, vel: number) {
+  smoothCanvasZoom(x: DOMHighResTimeStamp, vel: number) {
     const lb = 0.99;
     const ub = 1.01;
 
@@ -322,12 +345,12 @@ class canvas {
       return;
     }
 
-    requestAnimationFrame(this.smoothZoom.bind(this, x, vel));
+    requestAnimationFrame(this.smoothCanvasZoom.bind(this, x, vel));
   }
 
   canvasHorizontallyCenter() {
     if (this.SMOOTH) {
-      this.smoothScroll(
+      this.smoothCanvasScroll(
         performance.now(),
         (this.canvasElement.width / this.zoomFactor / 2 -
           this.xScroll -
@@ -497,21 +520,31 @@ class canvas {
     this.canvasElement.width = width;
   }
   bindListeners() {
-    this.listeners["mousemove"] = this.handlePointerMove.bind(this);
-    this.listeners["mousedown"] = this.handlePointerDown.bind(this);
-    this.listeners["mouseup"] = this.handlePointerUp.bind(this);
+    this.listeners["mousemove"] = this.handleMouseMove.bind(this);
+    this.listeners["mousedown"] = this.handleMouseDown.bind(this);
+    this.listeners["mouseup"] = this.handleMouseUp.bind(this);
     this.listeners["wheel"] = this.handleScrollWheel.bind(this);
+    this.listeners["touchstart"] = this.handleTouchStart.bind(this);
+    this.listeners["touchmove"] = this.handleTouchMove.bind(this);
 
     this.canvasElement.addEventListener(
-      "pointermove",
+      "mousemove",
       this.listeners["mousemove"]
     );
     this.canvasElement.addEventListener(
-      "pointerdown",
+      "mousedown",
       this.listeners["mousedown"]
     );
-    this.canvasElement.addEventListener("pointerup", this.listeners["mouseup"]);
+    this.canvasElement.addEventListener("mouseup", this.listeners["mouseup"]);
     this.canvasElement.addEventListener("wheel", this.listeners["wheel"]);
+    this.canvasElement.addEventListener(
+      "touchmove",
+      this.listeners["touchmove"]
+    );
+    this.canvasElement.addEventListener(
+      "touchstart",
+      this.listeners["touchstart"]
+    );
   }
 
   removeListener() {
@@ -530,6 +563,15 @@ class canvas {
       this.listeners["mouseup"]
     );
     this.canvasElement.removeEventListener("wheel", this.listeners["wheel"]);
+    this.canvasElement.removeEventListener(
+      "touchmove",
+      this.listeners["touchmove"]
+    );
+
+    this.canvasElement.removeEventListener(
+      "touchstart",
+      this.listeners["touchstart"]
+    );
   }
 
   get element() {
