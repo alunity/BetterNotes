@@ -14,7 +14,6 @@ async function setTemplates() {
 function render() {
   const element = document.createElement("div");
   element.appendChild(mainCanvas.element);
-  mainCanvas.element.classList.add("canvas");
 
   setTemplates();
 

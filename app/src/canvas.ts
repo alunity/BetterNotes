@@ -107,23 +107,100 @@ class canvas {
     if (e.buttons == 1 && this.canDraw && this.pageCursorIsOn(e) !== -1) {
       this.drawing = true;
       let rect = (e.target as HTMLElement).getBoundingClientRect();
-      this.points.push([
-        (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
-        (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
-        e.pressure,
-      ]);
-      this.renderStrokes([
-        {
-          points: this.points,
-          path: new Path2D(
-            getSvgPathFromStroke(getStroke(this.points, penOptions))
-          ),
-        },
-      ]);
+      this.handleDrawStart(
+        e.clientX - rect.left,
+        e.clientY - rect.top,
+        e.pressure
+      );
     }
   }
 
   handleMouseUp() {
+    this.handleDrawEnd();
+  }
+
+  handleMouseMove(e: PointerEvent) {
+    if (this.pageCursorIsOn(e) === -1) {
+      this.handleMouseUp();
+      return;
+    }
+    if (this.drawing) {
+      let rect = (e.target as HTMLElement).getBoundingClientRect();
+
+      this.handleDraw(e.clientX - rect.left, e.clientY - rect.top, e.pressure);
+    }
+  }
+
+  handleDrawStart(x: number, y: number, pressure: number) {
+    this.points.push([
+      x / this.zoomFactor - this.xScroll,
+      y / this.zoomFactor - this.yScroll,
+      pressure,
+    ]);
+    this.renderStrokes([
+      {
+        points: this.points,
+        path: new Path2D(
+          getSvgPathFromStroke(getStroke(this.points, penOptions))
+        ),
+      },
+    ]);
+  }
+
+  handleDraw(x: number, y: number, pressure: number) {
+    const dist = pytag(
+      x / this.zoomFactor - this.xScroll,
+      y / this.zoomFactor - this.yScroll,
+      this.points[this.points.length - 1][0],
+      this.points[this.points.length - 1][1]
+    );
+
+    // Interpolation
+    if (
+      dist > this.INTERPOLATE_DIST / this.zoomFactor &&
+      this.linearInterpolation
+    ) {
+      const dx =
+        x / this.zoomFactor -
+        this.xScroll -
+        this.points[this.points.length - 1][0];
+
+      const dy =
+        y / this.zoomFactor -
+        this.yScroll -
+        this.points[this.points.length - 1][1];
+
+      for (let i = 0; i < Math.floor(dist / this.INTERPOLATE_DIST); i++) {
+        this.points.push([
+          this.points[this.points.length - 1][0] +
+            dx / Math.floor(dist / this.INTERPOLATE_DIST),
+          this.points[this.points.length - 1][1] +
+            dy / Math.floor(dist / this.INTERPOLATE_DIST),
+        ]);
+      }
+    }
+
+    this.points.push([
+      x / this.zoomFactor - this.xScroll,
+      y / this.zoomFactor - this.yScroll,
+      pressure,
+    ]);
+
+    if (!(this.points.length % 10)) {
+      this.render();
+    }
+    // Only render then new line being drawn
+    this.renderStrokes([
+      {
+        points: this.points,
+        path: new Path2D(
+          getSvgPathFromStroke(getStroke(this.points, penOptions))
+        ),
+      },
+    ]);
+  }
+
+  handleDrawEnd() {
     this.drawing = false;
     this.strokes.push({
       points: this.points,
@@ -137,71 +214,23 @@ class canvas {
     this.render();
   }
 
-  handleMouseMove(e: PointerEvent) {
-    if (this.pageCursorIsOn(e) === -1) {
-      this.handleMouseUp();
-      return;
-    }
-    if (this.drawing) {
-      let rect = (e.target as HTMLElement).getBoundingClientRect();
-
-      const dist = pytag(
-        (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
-        (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
-        this.points[this.points.length - 1][0],
-        this.points[this.points.length - 1][1]
-      );
-
-      // Interpolation
-      if (
-        dist > this.INTERPOLATE_DIST / this.zoomFactor &&
-        this.linearInterpolation
-      ) {
-        const dx =
-          (e.clientX - rect.left) / this.zoomFactor -
-          this.xScroll -
-          this.points[this.points.length - 1][0];
-
-        const dy =
-          (e.clientY - rect.top) / this.zoomFactor -
-          this.yScroll -
-          this.points[this.points.length - 1][1];
-
-        for (let i = 0; i < Math.floor(dist / this.INTERPOLATE_DIST); i++) {
-          this.points.push([
-            this.points[this.points.length - 1][0] +
-              dx / Math.floor(dist / this.INTERPOLATE_DIST),
-            this.points[this.points.length - 1][1] +
-              dy / Math.floor(dist / this.INTERPOLATE_DIST),
-          ]);
-        }
-      }
-
-      this.points.push([
-        (e.clientX - rect.left) / this.zoomFactor - this.xScroll,
-        (e.clientY - rect.top) / this.zoomFactor - this.yScroll,
-        e.pressure,
-      ]);
-
-      if (!(this.points.length % 10)) {
-        this.render();
-      }
-      // Only render then new line being drawn
-      this.renderStrokes([
-        {
-          points: this.points,
-          path: new Path2D(
-            getSvgPathFromStroke(getStroke(this.points, penOptions))
-          ),
-        },
-      ]);
-    }
-  }
-
   lastTouchPosition: Array<number> = [];
   lastDist = 0;
 
   handleTouchStart(e: TouchEvent) {
+    e.preventDefault();
+
+    // Check for apple pencil
+    // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
+    if (e.touches[0].touchType === "stylus") {
+      let rect = (e.target as HTMLElement).getBoundingClientRect();
+      this.handleDrawStart(
+        e.touches[0].clientX - rect.left,
+        e.touches[0].clientY - rect.top,
+        e.touches[0].force
+      );
+      return;
+    }
     this.lastTouchPosition = [e.touches[0].clientX, e.touches[0].clientY];
     if (e.touches.length === 2) {
       this.lastDist = pytag(
@@ -214,6 +243,20 @@ class canvas {
   }
 
   handleTouchMove(e: TouchEvent) {
+    e.preventDefault();
+
+    // Check for apple pencil
+    // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
+    if (e.touches[0].touchType === "stylus") {
+      let rect = (e.target as HTMLElement).getBoundingClientRect();
+      this.handleDraw(
+        e.touches[0].clientX - rect.left,
+        e.touches[0].clientY - rect.top,
+        e.touches[0].force
+      );
+      return;
+    }
+
     const dx = e.touches[0].clientX - this.lastTouchPosition[0];
     const dy = e.touches[0].clientY - this.lastTouchPosition[1];
 
@@ -230,13 +273,19 @@ class canvas {
       );
 
       this.zoom(
-        dist / this.lastDist,
+        Math.sqrt(dist / this.lastDist),
         (e.touches[0].clientX + e.touches[1].clientX) / 2,
         (e.touches[0].clientY + e.touches[1].clientY) / 2
       );
 
       this.lastDist = dist;
     }
+  }
+
+  handleTouchEnd(e: TouchEvent) {
+    e.preventDefault();
+
+    this.handleDrawEnd();
   }
 
   pageCursorIsOn(e: MouseEvent) {
@@ -539,6 +588,7 @@ class canvas {
     this.listeners["wheel"] = this.handleScrollWheel.bind(this);
     this.listeners["touchstart"] = this.handleTouchStart.bind(this);
     this.listeners["touchmove"] = this.handleTouchMove.bind(this);
+    this.listeners["touchend"] = this.handleTouchEnd.bind(this);
 
     this.canvasElement.addEventListener(
       "mousemove",
@@ -558,6 +608,7 @@ class canvas {
       "touchstart",
       this.listeners["touchstart"]
     );
+    this.canvasElement.addEventListener("touchend", this.listeners["touchend"]);
   }
 
   removeListener() {
@@ -580,10 +631,13 @@ class canvas {
       "touchmove",
       this.listeners["touchmove"]
     );
-
     this.canvasElement.removeEventListener(
       "touchstart",
       this.listeners["touchstart"]
+    );
+    this.canvasElement.removeEventListener(
+      "touchend",
+      this.listeners["touchend"]
     );
   }
 
