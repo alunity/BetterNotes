@@ -1,8 +1,19 @@
 import drawing from "./canvas";
 import importPDF from "./pdf";
-import "./canvas.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.min.js";
+import "./style.css";
 
-const mainCanvas = new drawing(window.innerWidth - 25, window.innerHeight - 25);
+const toolbar = document.getElementById("toolbar");
+let toolbarHeight = 0;
+if (toolbar !== null) {
+  toolbarHeight = toolbar.clientHeight;
+}
+
+const mainCanvas = new drawing(
+  window.innerWidth - 25,
+  window.innerHeight - 25 - toolbarHeight
+);
 
 async function setTemplates() {
   mainCanvas.background = await importPDF(
@@ -11,11 +22,33 @@ async function setTemplates() {
   );
 }
 
+function toolBar() {
+  const penBTN = document.getElementById("pen");
+  const eraserBTN = document.getElementById("eraser");
+
+  if (penBTN !== null && eraserBTN !== null) {
+    penBTN.addEventListener("click", () => {
+      penBTN.className = "active";
+      eraserBTN.className = "glow";
+
+      mainCanvas.canDraw = true;
+      mainCanvas.erasing = false;
+    });
+    eraserBTN.addEventListener("click", () => {
+      eraserBTN.className = "active";
+      penBTN.className = "glow";
+      mainCanvas.canDraw = false;
+      mainCanvas.erasing = true;
+    });
+  }
+}
+
 function render() {
   const element = document.createElement("div");
   element.appendChild(mainCanvas.element);
 
   setTemplates();
+  toolBar();
 
   return element;
 }

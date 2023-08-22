@@ -1,5 +1,6 @@
 import { getStroke } from "perfect-freehand";
 import getSvgPathFromStroke from "./svgPathFromStroke";
+import "./canvas.css";
 
 const penOptions = {
   size: 5,
@@ -53,7 +54,8 @@ class canvas {
   context: CanvasRenderingContext2D;
 
   strokes: Array<iStrokes> = [];
-  canDraw = true;
+  canDraw = false;
+  erasing = false;
   drawing = false;
   points: Array<Array<number>> = [];
 
@@ -104,14 +106,18 @@ class canvas {
   }
 
   handleMouseDown(e: PointerEvent) {
-    if (e.buttons == 1 && this.canDraw && this.pageCursorIsOn(e) !== -1) {
-      this.drawing = true;
+    if (e.buttons == 1 && this.pageCursorIsOn(e) !== -1) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
-      this.handleDrawStart(
-        e.clientX - rect.left,
-        e.clientY - rect.top,
-        e.pressure
-      );
+      if (this.canDraw) {
+        this.drawing = true;
+        this.handleDrawStart(
+          e.clientX - rect.left,
+          e.clientY - rect.top,
+          e.pressure
+        );
+      } else if (this.erasing) {
+        this.handleErase(e.clientX - rect.left, e.clientY - rect.top);
+      }
     }
   }
 
@@ -124,10 +130,17 @@ class canvas {
       this.handleMouseUp();
       return;
     }
-    if (this.drawing) {
+    if (e.buttons == 1) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
-
-      this.handleDraw(e.clientX - rect.left, e.clientY - rect.top, e.pressure);
+      if (this.drawing) {
+        this.handleDraw(
+          e.clientX - rect.left,
+          e.clientY - rect.top,
+          e.pressure
+        );
+      } else if (this.erasing) {
+        this.handleErase(e.clientX - rect.left, e.clientY - rect.top);
+      }
     }
   }
 
@@ -214,6 +227,30 @@ class canvas {
     this.render();
   }
 
+  handleErase(x: number, y: number) {
+    let erased = false;
+    for (let i = 0; i < this.strokes.length; i++) {
+      for (let j = 0; j < this.strokes[i].points.length; j++) {
+        if (
+          pytag(
+            x / this.zoomFactor - this.xScroll,
+            y / this.zoomFactor - this.yScroll,
+            this.strokes[i].points[j][0],
+            this.strokes[i].points[j][1]
+          ) <= 5
+        ) {
+          this.strokes.splice(i, 1);
+          erased = true;
+          break;
+        }
+      }
+    }
+
+    if (erased) {
+      this.render();
+    }
+  }
+
   lastTouchPosition: Array<number> = [];
   lastDist = 0;
 
@@ -224,11 +261,18 @@ class canvas {
     // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
     if (e.touches[0].touchType === "stylus") {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
-      this.handleDrawStart(
-        e.touches[0].clientX - rect.left,
-        e.touches[0].clientY - rect.top,
-        e.touches[0].force
-      );
+      if (this.canDraw) {
+        this.handleDrawStart(
+          e.touches[0].clientX - rect.left,
+          e.touches[0].clientY - rect.top,
+          e.touches[0].force
+        );
+      } else if (this.erasing) {
+        this.handleErase(
+          e.touches[0].clientX - rect.left,
+          e.touches[0].clientY - rect.top
+        );
+      }
       return;
     }
     this.lastTouchPosition = [e.touches[0].clientX, e.touches[0].clientY];
@@ -249,11 +293,18 @@ class canvas {
     // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
     if (e.touches[0].touchType === "stylus") {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
-      this.handleDraw(
-        e.touches[0].clientX - rect.left,
-        e.touches[0].clientY - rect.top,
-        e.touches[0].force
-      );
+      if (this.canDraw) {
+        this.handleDraw(
+          e.touches[0].clientX - rect.left,
+          e.touches[0].clientY - rect.top,
+          e.touches[0].force
+        );
+      } else if (this.erasing) {
+        this.handleErase(
+          e.touches[0].clientX - rect.left,
+          e.touches[0].clientY - rect.top
+        );
+      }
       return;
     }
 
