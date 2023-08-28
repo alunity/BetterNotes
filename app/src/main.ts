@@ -11,8 +11,8 @@ if (toolbar !== null) {
 }
 
 const mainCanvas = new drawing(
-  window.innerWidth - 25,
-  window.innerHeight - 25 - toolbarHeight
+  window.innerWidth,
+  window.innerHeight - toolbarHeight
 );
 
 async function setTemplates() {

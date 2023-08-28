@@ -1,5 +1,5 @@
 import { getStroke } from "perfect-freehand";
-import getSvgPathFromStroke from "./svgPathFromStroke";
+import getSvgPathFromStroke from "./SvgPathFromStroke";
 import "./canvas.css";
 
 const penOptions = {
@@ -74,6 +74,8 @@ class canvas {
   INTERPOLATE_DIST = 10;
   linearInterpolation = true;
 
+  treatTouchAsStylus = false;
+
   backgrounds: Array<HTMLImageElement> = [];
 
   listeners: iListeners = {};
@@ -105,16 +107,12 @@ class canvas {
     e.preventDefault();
   }
 
-  handleMouseDown(e: PointerEvent) {
+  handleMouseDown(e: MouseEvent) {
     if (e.buttons == 1 && this.pageCursorIsOn(e) !== -1) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
       if (this.canDraw) {
         this.drawing = true;
-        this.handleDrawStart(
-          e.clientX - rect.left,
-          e.clientY - rect.top,
-          e.pressure
-        );
+        this.handleDrawStart(e.clientX - rect.left, e.clientY - rect.top, 0.5);
       } else if (this.erasing) {
         this.handleErase(e.clientX - rect.left, e.clientY - rect.top);
       }
@@ -125,7 +123,7 @@ class canvas {
     this.handleDrawEnd();
   }
 
-  handleMouseMove(e: PointerEvent) {
+  handleMouseMove(e: MouseEvent) {
     if (this.pageCursorIsOn(e) === -1) {
       this.handleMouseUp();
       return;
@@ -133,11 +131,7 @@ class canvas {
     if (e.buttons == 1) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
       if (this.drawing) {
-        this.handleDraw(
-          e.clientX - rect.left,
-          e.clientY - rect.top,
-          e.pressure
-        );
+        this.handleDraw(e.clientX - rect.left, e.clientY - rect.top, 0.5);
       } else if (this.erasing) {
         this.handleErase(e.clientX - rect.left, e.clientY - rect.top);
       }
@@ -237,7 +231,7 @@ class canvas {
             y / this.zoomFactor - this.yScroll,
             this.strokes[i].points[j][0],
             this.strokes[i].points[j][1]
-          ) <= 5
+          ) <= 10
         ) {
           this.strokes.splice(i, 1);
           erased = true;
@@ -255,11 +249,16 @@ class canvas {
   lastDist = 0;
 
   handleTouchStart(e: TouchEvent) {
+    console.log(e);
     e.preventDefault();
 
     // Check for apple pencil
-    // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
-    if (e.touches[0].touchType === "stylus") {
+
+    if (
+      // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
+      (e.touches[0].touchType === "stylus" || this.treatTouchAsStylus) &&
+      this.canDraw
+    ) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
       if (this.canDraw) {
         this.handleDrawStart(
@@ -290,8 +289,11 @@ class canvas {
     e.preventDefault();
 
     // Check for apple pencil
-    // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
-    if (e.touches[0].touchType === "stylus") {
+    if (
+      // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
+      (e.touches[0].touchType === "stylus" || this.treatTouchAsStylus) &&
+      this.canDraw
+    ) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
       if (this.canDraw) {
         this.handleDraw(
