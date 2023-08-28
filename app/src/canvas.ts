@@ -77,6 +77,7 @@ class canvas {
   treatTouchAsStylus = false;
 
   backgrounds: Array<HTMLImageElement> = [];
+  GAPBETWEENPAGES = 20;
 
   listeners: iListeners = {};
 
@@ -342,12 +343,14 @@ class canvas {
   }
 
   pageCursorIsOn(e: MouseEvent) {
+    let rect = (e.target as HTMLElement).getBoundingClientRect();
     const TOP_LEFT = [-this.xScroll, -this.yScroll];
     const POS = [
-      TOP_LEFT[0] + e.clientX / this.zoomFactor,
-      TOP_LEFT[1] + e.clientY / this.zoomFactor,
+      TOP_LEFT[0] + (e.clientX - rect.left) / this.zoomFactor,
+      TOP_LEFT[1] + (e.clientY - rect.top) / this.zoomFactor,
     ];
     let currY = 0;
+    console.log();
 
     for (let i = 0; i < this.backgrounds.length; i++) {
       if (
@@ -358,7 +361,7 @@ class canvas {
       ) {
         return i + 1;
       }
-      currY += this.backgrounds[i].height;
+      currY += this.backgrounds[i].height + this.GAPBETWEENPAGES;
     }
     return -1;
   }
@@ -590,7 +593,7 @@ class canvas {
           this.backgrounds[i].height
         );
       }
-      currY += this.backgrounds[i].height;
+      currY += this.backgrounds[i].height + this.GAPBETWEENPAGES;
     }
   }
 
@@ -634,6 +637,12 @@ class canvas {
     this.canvasElement.height = height;
     this.canvasElement.width = width;
   }
+
+  addBackground(num = this.backgrounds.length - 1) {
+    this.backgrounds.push(this.backgrounds[num]);
+    this.render();
+  }
+
   bindListeners() {
     this.listeners["mousemove"] = this.handleMouseMove.bind(this);
     this.listeners["mousedown"] = this.handleMouseDown.bind(this);

@@ -25,8 +25,9 @@ async function setTemplates() {
 function toolBar() {
   const penBTN = document.getElementById("pen");
   const eraserBTN = document.getElementById("eraser");
+  const addBTN = document.getElementById("add");
 
-  if (penBTN !== null && eraserBTN !== null) {
+  if (penBTN !== null && eraserBTN !== null && addBTN !== null) {
     penBTN.addEventListener("click", () => {
       penBTN.className = "active";
       eraserBTN.className = "glow";
@@ -41,6 +42,10 @@ function toolBar() {
       mainCanvas.erasing = true;
     });
   }
+
+  addBTN?.addEventListener("click", () => {
+    mainCanvas.addBackground();
+  });
 }
 
 function render() {
