@@ -250,7 +250,6 @@ class canvas {
   lastDist = 0;
 
   handleTouchStart(e: TouchEvent) {
-    console.log(e);
     e.preventDefault();
 
     // Check for apple pencil
