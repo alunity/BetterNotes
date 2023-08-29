@@ -1,6 +1,6 @@
 import * as pdfjs from "pdfjs-dist";
 
-async function importPDF(url: string) {
+async function downloadPDF(url: string) {
   if (!pdfjs.GlobalWorkerOptions.workerSrc) {
     const WORKER_URL = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
     pdfjs.GlobalWorkerOptions.workerSrc = WORKER_URL;
@@ -39,4 +39,5 @@ async function importPDF(url: string) {
   }
   return pages;
 }
-export default importPDF;
+
+export default downloadPDF;

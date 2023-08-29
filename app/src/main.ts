@@ -1,5 +1,4 @@
 import drawing from "./canvas";
-import importPDF from "./pdf";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.min.js";
 import "./style.css";
@@ -16,9 +15,9 @@ const mainCanvas = new drawing(
 );
 
 async function setTemplates() {
-  mainCanvas.background = await importPDF(
-    "https://arxiv.org/ftp/arxiv/papers/1304/1304.7653.pdf"
-    // "https://raw.githubusercontent.com/flyguybravo/goodnotes/1f93ef6/Dark/Grid/Grid-5mm-Landscape-Dark.pdf"
+  mainCanvas.setTemplate(
+    // "https://arxiv.org/ftp/arxiv/papers/1304/1304.7653.pdf"
+    "https://raw.githubusercontent.com/flyguybravo/goodnotes/1f93ef6/Dark/Grid/Grid-5mm-Landscape-Dark.pdf"
   );
 }
 
@@ -27,7 +26,12 @@ function toolBar() {
   const eraserBTN = document.getElementById("eraser");
   const addBTN = document.getElementById("add");
 
-  if (penBTN !== null && eraserBTN !== null && addBTN !== null) {
+  if (
+    penBTN !== null &&
+    eraserBTN !== null &&
+    addBTN !== null &&
+    toolbar !== null
+  ) {
     penBTN.addEventListener("click", () => {
       penBTN.className = "active";
       eraserBTN.className = "glow";

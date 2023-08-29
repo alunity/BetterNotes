@@ -1,6 +1,7 @@
 import { getStroke } from "perfect-freehand";
 import getSvgPathFromStroke from "./SvgPathFromStroke";
 import "./canvas.css";
+import downloadPDF from "./pdf";
 
 const penOptions = {
   size: 5,
@@ -47,6 +48,11 @@ function pytag(x_1: number, y_1: number, x_2: number, y_2: number) {
 interface iStrokes {
   points: Array<Array<number>>;
   path: Path2D;
+}
+
+interface saveFile {
+  strokes: Array<Array<Array<number>>>;
+  backgrounds: Array<string>;
 }
 
 class canvas {
@@ -702,24 +708,46 @@ class canvas {
     );
   }
 
-  get element() {
-    return this.canvasElement;
+  async setTemplate(url: string) {
+    this.background = await downloadPDF(url);
   }
 
-  set allowedToDraw(value: boolean) {
-    this.canDraw = value;
-  }
-
-  set background(x: Array<string>) {
-    for (let i = 0; i < x.length; i++) {
+  set background(blobs: Array<string>) {
+    this.backgrounds = [];
+    for (let i = 0; i < blobs.length; i++) {
       const img = new Image();
-      img.src = x[i];
+      img.src = blobs[i];
       this.backgrounds.push(img);
     }
     setTimeout(() => {
       this.render();
       this.bindListeners();
     }, 1);
+  }
+
+  save() {
+    const strokePoints = this.strokes.map((x) => x.points);
+    const backgrounds = this.backgrounds.map((x) => x.src);
+    const data: saveFile = { backgrounds: backgrounds, strokes: strokePoints };
+
+    return JSON.stringify(data);
+  }
+
+  load(dat: string) {
+    const data: saveFile = JSON.parse(dat);
+    this.strokes = data.strokes.map((x) => ({
+      points: x,
+      path: new Path2D(getSvgPathFromStroke(getStroke(x, penOptions))),
+    }));
+    this.background = data.backgrounds;
+  }
+
+  get element() {
+    return this.canvasElement;
+  }
+
+  set allowedToDraw(value: boolean) {
+    this.canDraw = value;
   }
 
   get documentHeight() {
