@@ -2,26 +2,9 @@ import drawing from "./canvas";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.min.js";
 import "./style.css";
+import { createNoteModal } from "./modal";
 
-const toolbar = document.getElementById("toolbar");
-let toolbarHeight = 0;
-if (toolbar !== null) {
-  toolbarHeight = toolbar.clientHeight;
-}
-
-const mainCanvas = new drawing(
-  window.innerWidth,
-  window.innerHeight - toolbarHeight
-);
-
-async function setTemplates() {
-  mainCanvas.setTemplate(
-    // "https://arxiv.org/ftp/arxiv/papers/1304/1304.7653.pdf"
-    "https://raw.githubusercontent.com/flyguybravo/goodnotes/1f93ef6/Dark/Grid/Grid-5mm-Landscape-Dark.pdf"
-  );
-}
-
-function toolBar() {
+function toolBar(mainCanvas: drawing) {
   const penBTN = document.getElementById("pen");
   const eraserBTN = document.getElementById("eraser");
   const addBTN = document.getElementById("add");
@@ -52,12 +35,18 @@ function toolBar() {
   });
 }
 
+function documents() {
+  const newNote = document.getElementById("newNote");
+  if (newNote !== null) {
+    newNote.addEventListener("click", () => {
+      createNoteModal();
+    });
+  }
+}
+
 function render() {
   const element = document.createElement("div");
-  element.appendChild(mainCanvas.element);
-
-  setTemplates();
-  toolBar();
+  documents();
 
   return element;
 }

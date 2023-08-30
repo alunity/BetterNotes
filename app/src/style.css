@@ -6,6 +6,8 @@ body {
   user-select: none;
 
   overflow: hidden;
+
+  color: white;
 }
 
 img {
@@ -37,6 +39,56 @@ img {
   float: right;
 }
 
+.float-left {
+  float: left;
+}
+
 .hide {
-  display: none;
+  display: none !important;
+}
+
+.fixed {
+  position: fixed;
+}
+
+.rblack {
+  color: #1a1423;
+}
+
+.rblack-bg {
+  background-color: #1a1423;
+}
+
+.violet {
+  color: #3d314a;
+}
+.violet-bg {
+  background-color: #271f30;
+}
+
+.isabelline {
+  color: #f2efea;
+}
+
+.coral {
+  color: #fc7753;
+}
+
+.blue {
+  color: #66d7d1;
+}
+
+.Phudu {
+  font-family: "Phudu", Arial, Helvetica, sans-serif;
+}
+
+.inline {
+  display: inline;
+}
+
+.overflowScroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
 }
