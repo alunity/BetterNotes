@@ -23,7 +23,7 @@
         class="glow float-right"
       />
     </div>
-    <div>
+    <div id="documents">
       <div class="p-1">
         <img src="/logo.svg" height="40" width="40" class="glow float-left" />
         <h1 class="text-center isabelline Phudu">Documents</h1>
@@ -40,7 +40,7 @@
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">Create a note</h5>
+            <h5 class="modal-title">Create</h5>
             <button
               type="button"
               class="btn-close"
@@ -49,31 +49,61 @@
             ></button>
           </div>
           <div class="modal-body">
-            <label for="name">Name</label>
+            <label>Name</label>
             <input
               type="text"
               class="form-control"
-              id="name"
+              id="nameInput"
               aria-describedby=""
             />
+
             <br />
-            <p>Select a template</p>
-            <div
-              class="d-flex justify-content-center"
-              id="templateImageLoading"
-            >
-              <div class="spinner-grow" role="status">
-                <span class="visually-hidden">Loading...</span>
-              </div>
+
+            <div class="center">
+              <button
+                id="selectNote"
+                type="button"
+                class="btn btn-outline-primary"
+              >
+                Note
+              </button>
+              <button
+                id="selectDirectory"
+                type="button"
+                class="btn btn-outline-success"
+              >
+                Directory
+              </button>
             </div>
-            <div id="templates" class="overflowScroll hide"></div>
+
+            <br />
+            <div id="templateDiv">
+              <p>Select a template</p>
+              <div
+                class="d-flex justify-content-center"
+                id="templateImageLoading"
+              >
+                <div class="spinner-grow" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+              </div>
+              <div id="templates" class="overflowScroll hide"></div>
+            </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-primary">Create</button>
+            <button
+              id="createBTN"
+              type="button"
+              class="btn btn-primary disabled"
+              data-bs-dismiss="modal"
+            >
+              Create
+            </button>
           </div>
         </div>
       </div>
     </div>
+    <div id="canvas"></div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

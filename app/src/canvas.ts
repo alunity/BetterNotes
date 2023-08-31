@@ -55,7 +55,38 @@ interface saveFile {
   backgrounds: Array<string>;
 }
 
-class canvas {
+function toolBar(mainCanvas: Canvas) {
+  const penBTN = document.getElementById("pen");
+  const eraserBTN = document.getElementById("eraser");
+  const addBTN = document.getElementById("add");
+
+  if (
+    penBTN !== null &&
+    eraserBTN !== null &&
+    addBTN !== null &&
+    toolbar !== null
+  ) {
+    penBTN.addEventListener("click", () => {
+      penBTN.className = "active";
+      eraserBTN.className = "glow";
+
+      mainCanvas.canDraw = true;
+      mainCanvas.erasing = false;
+    });
+    eraserBTN.addEventListener("click", () => {
+      eraserBTN.className = "active";
+      penBTN.className = "glow";
+      mainCanvas.canDraw = false;
+      mainCanvas.erasing = true;
+    });
+  }
+
+  addBTN?.addEventListener("click", () => {
+    mainCanvas.addBackground();
+  });
+}
+
+class Canvas {
   canvasElement: HTMLCanvasElement;
   context: CanvasRenderingContext2D;
 
@@ -772,4 +803,4 @@ class canvas {
   }
 }
 
-export default canvas;
+export { Canvas, toolBar };
