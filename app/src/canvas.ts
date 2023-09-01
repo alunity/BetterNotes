@@ -2,6 +2,7 @@ import { getStroke } from "perfect-freehand";
 import getSvgPathFromStroke from "./SvgPathFromStroke";
 import "./canvas.css";
 import downloadPDF from "./pdf";
+import { Note, noteData } from "./file";
 
 const penOptions = {
   size: 5,
@@ -50,40 +51,56 @@ interface iStrokes {
   path: Path2D;
 }
 
-interface saveFile {
-  strokes: Array<Array<Array<number>>>;
-  backgrounds: Array<string>;
-}
+const listener: { [key: string]: () => void } = {};
 
-function toolBar(mainCanvas: Canvas) {
+function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
   const penBTN = document.getElementById("pen");
   const eraserBTN = document.getElementById("eraser");
   const addBTN = document.getElementById("add");
+  const closeBTN = document.getElementById("close");
 
-  if (
-    penBTN !== null &&
-    eraserBTN !== null &&
-    addBTN !== null &&
-    toolbar !== null
-  ) {
-    penBTN.addEventListener("click", () => {
+  if (penBTN && eraserBTN && addBTN && closeBTN) {
+    // Remove previous event listeners and effect
+    penBTN.className = "glow";
+    eraserBTN.className = "glow";
+
+    penBTN.removeEventListener("click", listener["penBTN"]);
+    eraserBTN.removeEventListener("click", listener["eraserBTN"]);
+    addBTN.removeEventListener("click", listener["addBTN"]);
+
+    closeBTN.removeEventListener("click", listener["closeBTN"]);
+
+    // Update event listeners for new canvas
+    listener["penBTN"] = () => {
       penBTN.className = "active";
       eraserBTN.className = "glow";
 
       mainCanvas.canDraw = true;
       mainCanvas.erasing = false;
-    });
-    eraserBTN.addEventListener("click", () => {
+    };
+
+    listener["eraserBTN"] = () => {
       eraserBTN.className = "active";
       penBTN.className = "glow";
       mainCanvas.canDraw = false;
       mainCanvas.erasing = true;
-    });
-  }
+    };
 
-  addBTN?.addEventListener("click", () => {
-    mainCanvas.addBackground();
-  });
+    listener["addBTN"] = () => {
+      mainCanvas.addBackground();
+    };
+    listener["closeBTN"] = () => {
+      mainCanvas.note.data = mainCanvas.save();
+      openDocuments();
+    };
+
+    // Add new listeners
+    penBTN.addEventListener("click", listener["penBTN"]);
+    eraserBTN.addEventListener("click", listener["eraserBTN"]);
+    addBTN.addEventListener("click", listener["addBTN"]);
+
+    closeBTN.addEventListener("click", listener["closeBTN"]);
+  }
 }
 
 class Canvas {
@@ -119,6 +136,8 @@ class Canvas {
   listeners: iListeners = {};
 
   debug = false;
+
+  note: Note;
 
   handleScrollWheel(e: WheelEvent) {
     if (e.deltaY > 0) {
@@ -759,13 +778,12 @@ class Canvas {
   save() {
     const strokePoints = this.strokes.map((x) => x.points);
     const backgrounds = this.backgrounds.map((x) => x.src);
-    const data: saveFile = { backgrounds: backgrounds, strokes: strokePoints };
+    const data: noteData = { backgrounds: backgrounds, strokes: strokePoints };
 
-    return JSON.stringify(data);
+    return data;
   }
 
-  load(dat: string) {
-    const data: saveFile = JSON.parse(dat);
+  load(data: noteData) {
     this.strokes = data.strokes.map((x) => ({
       points: x,
       path: new Path2D(getSvgPathFromStroke(getStroke(x, penOptions))),
@@ -789,7 +807,10 @@ class Canvas {
     return sum;
   }
 
-  constructor(width: number, height: number) {
+  constructor(width: number, height: number, note: Note) {
+    this.note = note;
+    this.load(note.data);
+
     const canvas = document.createElement("canvas");
     this.canvasElement = canvas;
     const ctx = canvas.getContext("2d");
@@ -803,4 +824,4 @@ class Canvas {
   }
 }
 
-export { Canvas, toolBar };
+export { Canvas, ToolBar };

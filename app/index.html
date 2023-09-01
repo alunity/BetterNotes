@@ -12,6 +12,13 @@
   </head>
   <body class="rblack-bg">
     <div id="toolbar" class="center p-2 border border-dark colour0 hide">
+      <img
+        src="/close.svg"
+        id="close"
+        height="40"
+        width="40"
+        class="glow float-left"
+      />
       <img src="/pen.svg" id="pen" height="40" width="40" class="glow" />
       &nbsp; &nbsp;
       <img src="/eraser.svg" id="eraser" height="40" width="40" class="glow" />
@@ -28,11 +35,15 @@
         <img src="/logo.svg" height="40" width="40" class="glow float-left" />
         <h1 class="text-center isabelline Phudu">Documents</h1>
       </div>
-      <div class="container glow" id="newNote">
-        <div class="violet-bg container p-3 border border-dark">
-          <img src="/math-plus.svg" id="add" height="40" width="40" />
-          <span>Click here to add a note</span>
+      <div class="container">
+        <div class="glow" id="newNote">
+          <div class="violet-bg container p-3 border border-dark">
+            <img src="/math-plus.svg" id="add" height="40" width="40" />
+            <span>Click here to add a note</span>
+          </div>
         </div>
+
+        <div id="files"></div>
       </div>
     </div>
 

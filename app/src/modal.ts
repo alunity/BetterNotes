@@ -16,6 +16,13 @@ const templates = [
   ],
 ];
 
+async function getNoteModal() {
+  const modalElement = document.getElementById("createNoteModal");
+  if (modalElement) {
+    return await new Modal(modalElement);
+  }
+}
+
 async function createNoteModal(
   createNote: (name: string, template: string) => void
 ) {
@@ -31,20 +38,17 @@ async function createNoteModal(
   const createBTN = document.getElementById("createBTN");
 
   if (
-    modalElement !== null &&
-    templateElement !== null &&
-    templateLoading !== null &&
-    noteBTN !== null &&
-    directoryBTN !== null &&
-    templateDiv !== null &&
-    nameInput !== null &&
-    createBTN !== null
+    modalElement &&
+    templateElement &&
+    templateLoading &&
+    noteBTN &&
+    directoryBTN &&
+    templateDiv &&
+    nameInput &&
+    createBTN
   ) {
     templateLoading.classList.remove("hide");
     templateElement.classList.add("hide");
-
-    const modal = new Modal(modalElement);
-    modal.show();
 
     templateElement.innerHTML = "";
     nameInput.value = "";
@@ -104,6 +108,8 @@ async function createNoteModal(
 
     createBTN.addEventListener("click", () => {
       createNote(name, templates[selected][1]);
+      nameInput.value = "";
+      createBTN.classList.add("disabled");
     });
 
     for (let i = 0; i < templates.length; i++) {
@@ -146,4 +152,4 @@ async function createNoteModal(
   }
 }
 
-export { createNoteModal };
+export { createNoteModal, getNoteModal };
