@@ -45,10 +45,6 @@ class FileSystemNode {
   addDirectory(directory: FileSystemNode) {
     this.directories.push(directory);
   }
-
-  get isRoot() {
-    return this.root === null;
-  }
 }
 
 const inp = document.createElement("input");

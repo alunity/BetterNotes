@@ -14,7 +14,7 @@ async function documents() {
   renderFiles();
   if (newNote && back) {
     back.addEventListener("click", () => {
-      if (FS.root !== null) {
+      if (FS.root) {
         FS = FS.root;
         renderFiles();
       }
@@ -34,7 +34,7 @@ function renderFiles() {
   const back = document.getElementById("back");
   const files = document.getElementById("files");
   if (files && back) {
-    if (FS.isRoot) {
+    if (FS.root) {
       back.classList.add("hide");
     } else {
       back.classList.remove("hide");
@@ -50,17 +50,34 @@ function renderFiles() {
       div.classList.add("border-dark");
       div.classList.add("glow");
 
-      const img = document.createElement("img");
-      img.src = "/notes.svg";
-      img.width = 40;
-      img.height = 40;
-      div.appendChild(img);
+      const noteIcon = document.createElement("img");
+      noteIcon.src = "/notes.svg";
+      noteIcon.width = 40;
+      noteIcon.height = 40;
+      div.appendChild(noteIcon);
 
       const span = document.createElement("span");
       span.innerHTML = " " + FS.notes[i].name;
       div.appendChild(span);
 
-      div.addEventListener("click", () => openNote(FS.notes[i]));
+      const deleteIcon = document.createElement("img");
+      deleteIcon.src = "/trash.svg";
+      deleteIcon.width = 40;
+      deleteIcon.height = 40;
+      deleteIcon.classList.add("float-right");
+      deleteIcon.id = "delete";
+      deleteIcon.addEventListener("click", () => {
+        FS.notes.splice(i, 1);
+        renderFiles();
+      });
+      div.appendChild(deleteIcon);
+
+      div.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        if (target.id !== "delete") {
+          openNote(FS.notes[i]);
+        }
+      });
 
       files.appendChild(div);
     }
@@ -74,11 +91,11 @@ function renderFiles() {
       div.classList.add("border-dark");
       div.classList.add("glow");
 
-      const img = document.createElement("img");
-      img.src = "/folder.svg";
-      img.width = 40;
-      img.height = 40;
-      div.appendChild(img);
+      const folderIcon = document.createElement("img");
+      folderIcon.src = "/folder.svg";
+      folderIcon.width = 40;
+      folderIcon.height = 40;
+      div.appendChild(folderIcon);
 
       const span = document.createElement("span");
       span.innerHTML = " " + FS.directories[i].name;
