@@ -165,8 +165,11 @@ class Canvas {
   }
 
   handleMouseDown(e: MouseEvent) {
-    if (e.buttons == 1 && this.pageCursorIsOn(e) !== -1) {
-      let rect = (e.target as HTMLElement).getBoundingClientRect();
+    let rect = (e.target as HTMLElement).getBoundingClientRect();
+    if (
+      e.buttons == 1 &&
+      this.pageCursorIsOn(e.clientX, e.clientY, rect) !== -1
+    ) {
       if (this.canDraw) {
         this.drawing = true;
         this.handleDrawStart(e.clientX - rect.left, e.clientY - rect.top, 0.5);
@@ -181,12 +184,12 @@ class Canvas {
   }
 
   handleMouseMove(e: MouseEvent) {
-    if (this.pageCursorIsOn(e) === -1) {
+    let rect = (e.target as HTMLElement).getBoundingClientRect();
+    if (this.pageCursorIsOn(e.clientX, e.clientY, rect) === -1) {
       this.handleMouseUp();
       return;
     }
     if (e.buttons == 1) {
-      let rect = (e.target as HTMLElement).getBoundingClientRect();
       if (this.drawing) {
         this.handleDraw(e.clientX - rect.left, e.clientY - rect.top, 0.5);
       } else if (this.erasing) {
@@ -312,11 +315,18 @@ class Canvas {
 
     if (
       // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
-      (e.touches[0].touchType === "stylus" || this.treatTouchAsStylus) &&
-      this.canDraw
+      e.touches[0].touchType === "stylus" ||
+      this.treatTouchAsStylus
     ) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
-      if (this.canDraw) {
+      if (
+        this.canDraw &&
+        this.pageCursorIsOn(
+          e.touches[0].clientX,
+          e.touches[0].clientY,
+          rect
+        ) !== -1
+      ) {
         this.handleDrawStart(
           e.touches[0].clientX - rect.left,
           e.touches[0].clientY - rect.top,
@@ -347,11 +357,18 @@ class Canvas {
     // Check for apple pencil
     if (
       // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
-      (e.touches[0].touchType === "stylus" || this.treatTouchAsStylus) &&
-      this.canDraw
+      e.touches[0].touchType === "stylus" ||
+      this.treatTouchAsStylus
     ) {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
-      if (this.canDraw) {
+      if (
+        this.canDraw &&
+        this.pageCursorIsOn(
+          e.touches[0].clientX,
+          e.touches[0].clientY,
+          rect
+        ) !== -1
+      ) {
         this.handleDraw(
           e.touches[0].clientX - rect.left,
           e.touches[0].clientY - rect.top,
@@ -397,15 +414,13 @@ class Canvas {
     this.handleDrawEnd();
   }
 
-  pageCursorIsOn(e: MouseEvent) {
-    let rect = (e.target as HTMLElement).getBoundingClientRect();
+  pageCursorIsOn(x: number, y: number, rect: DOMRect) {
     const TOP_LEFT = [-this.xScroll, -this.yScroll];
     const POS = [
-      TOP_LEFT[0] + (e.clientX - rect.left) / this.zoomFactor,
-      TOP_LEFT[1] + (e.clientY - rect.top) / this.zoomFactor,
+      TOP_LEFT[0] + (x - rect.left) / this.zoomFactor,
+      TOP_LEFT[1] + (y - rect.top) / this.zoomFactor,
     ];
     let currY = 0;
-    console.log();
 
     for (let i = 0; i < this.backgrounds.length; i++) {
       if (
