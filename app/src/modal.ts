@@ -24,7 +24,8 @@ async function getNoteModal() {
 }
 
 async function createNoteModal(
-  createNote: (name: string, template: string) => void
+  createNote: (name: string, template: string) => void,
+  createDirectory: (name: string) => void
 ) {
   const modalElement = document.getElementById("createNoteModal");
   const templateElement = document.getElementById("templates");
@@ -107,7 +108,11 @@ async function createNoteModal(
     });
 
     createBTN.addEventListener("click", () => {
-      createNote(name, templates[selected][1]);
+      if (noteSelected) {
+        createNote(name, templates[selected][1]);
+      } else {
+        createDirectory(name);
+      }
       nameInput.value = "";
       createBTN.classList.add("disabled");
     });

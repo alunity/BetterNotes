@@ -20,8 +20,20 @@ class Note {
 class FileSystemNode {
   directories: Array<FileSystemNode>;
   notes: Array<Note>;
+  root: FileSystemNode | null = null;
+  name: string;
 
-  constructor() {
+  constructor(name?: string, root?: FileSystemNode) {
+    if (name) {
+      this.name = name;
+    } else {
+      this.name = "";
+    }
+
+    if (root) {
+      this.root = root;
+    }
+
     this.directories = [];
     this.notes = [];
   }
@@ -32,6 +44,10 @@ class FileSystemNode {
 
   addDirectory(directory: FileSystemNode) {
     this.directories.push(directory);
+  }
+
+  get isRoot() {
+    return this.root === null;
   }
 }
 

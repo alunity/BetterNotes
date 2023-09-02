@@ -109,3 +109,15 @@ img {
 .selected-glow:hover {
   background-color: #f2efea70;
 }
+
+.top-left {
+  position: fixed;
+  top: 2em;
+  left: 2em;
+}
+
+.top-right {
+  position: fixed;
+  top: 2em;
+  right: 2em;
+}
