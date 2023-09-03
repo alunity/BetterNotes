@@ -1,12 +1,13 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.min.js";
 import "./style.css";
-import { createNoteModal, getNoteModal } from "./modal";
+import { createNoteModal, getNoteModal, moveModal } from "./modal";
 import { Canvas, ToolBar } from "./canvas";
 import { FileSystemNode, Note } from "./file";
 import downloadPDF from "./pdf";
 
 let FS = new FileSystemNode();
+const root = FS;
 
 async function documents() {
   const newNote = document.getElementById("newNote");
@@ -34,7 +35,7 @@ function renderFiles() {
   const back = document.getElementById("back");
   const files = document.getElementById("files");
   if (files && back) {
-    if (FS.root) {
+    if (!FS.root) {
       back.classList.add("hide");
     } else {
       back.classList.remove("hide");
@@ -72,9 +73,20 @@ function renderFiles() {
       });
       div.appendChild(deleteIcon);
 
+      const moveIcon = document.createElement("img");
+      moveIcon.src = "/arrows-exchange-alt.svg";
+      moveIcon.width = 40;
+      moveIcon.height = 40;
+      moveIcon.classList.add("float-right");
+      moveIcon.id = "move";
+      moveIcon.addEventListener("click", () => {
+        moveModal(root, FS, FS.notes[i], renderFiles);
+      });
+      div.appendChild(moveIcon);
+
       div.addEventListener("click", (e) => {
         const target = e.target as HTMLElement;
-        if (target.id !== "delete") {
+        if (target.id !== "delete" && target.id !== "move") {
           openNote(FS.notes[i]);
         }
       });
@@ -101,9 +113,35 @@ function renderFiles() {
       span.innerHTML = " " + FS.directories[i].name;
       div.appendChild(span);
 
-      div.addEventListener("click", () => {
-        FS = FS.directories[i];
+      const deleteIcon = document.createElement("img");
+      deleteIcon.src = "/trash.svg";
+      deleteIcon.width = 40;
+      deleteIcon.height = 40;
+      deleteIcon.classList.add("float-right");
+      deleteIcon.id = "delete";
+      deleteIcon.addEventListener("click", () => {
+        FS.directories.splice(i, 1);
         renderFiles();
+      });
+      div.appendChild(deleteIcon);
+
+      const moveIcon = document.createElement("img");
+      moveIcon.src = "/arrows-exchange-alt.svg";
+      moveIcon.width = 40;
+      moveIcon.height = 40;
+      moveIcon.classList.add("float-right");
+      moveIcon.id = "move";
+      moveIcon.addEventListener("click", () => {
+        moveModal(root, FS, FS.directories[i], renderFiles);
+      });
+      div.appendChild(moveIcon);
+
+      div.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+        if (target.id !== "delete" && target.id !== "move") {
+          FS = FS.directories[i];
+          renderFiles();
+        }
       });
 
       files.appendChild(div);

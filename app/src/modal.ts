@@ -1,4 +1,5 @@
 import { Modal } from "bootstrap";
+import { FileSystemNode, Note, isValidFSPath, moveFSItem } from "./file";
 import downloadPDF from "./pdf";
 
 const templates = [
@@ -16,6 +17,46 @@ const templates = [
   ],
 ];
 
+let lastMoveBTNListener = () => {};
+let lastInputListener = (e: Event) => {};
+
+function moveModal(
+  root: FileSystemNode,
+  curr: FileSystemNode,
+  item: FileSystemNode | Note,
+  renderFiles: () => void
+) {
+  const modalElement = document.getElementById("moveModal");
+  const input = document.getElementById("pathInput") as HTMLInputElement;
+  const moveBTN = document.getElementById("moveBTN") as HTMLInputElement;
+  let path = "";
+  if (input && moveBTN && modalElement) {
+    input.value = "";
+
+    const modal = new Modal(modalElement);
+    modal.show();
+
+    input.removeEventListener("input", lastInputListener);
+    lastInputListener = (e: Event) => {
+      const input = e.target as HTMLInputElement;
+      path = input.value;
+      if (isValidFSPath(root, path) && path.split("/")[0] !== item.name) {
+        moveBTN.classList.remove("disabled");
+      } else {
+        moveBTN.classList.add("disabled");
+      }
+    };
+    input.addEventListener("input", lastInputListener);
+
+    moveBTN.removeEventListener("click", lastMoveBTNListener);
+    lastMoveBTNListener = () => {
+      moveFSItem(root, curr, item, path);
+      renderFiles();
+    };
+    moveBTN.addEventListener("click", lastMoveBTNListener);
+  }
+}
+
 async function getNoteModal() {
   const modalElement = document.getElementById("createNoteModal");
   if (modalElement) {
@@ -27,7 +68,6 @@ async function createNoteModal(
   createNote: (name: string, template: string) => void,
   createDirectory: (name: string) => void
 ) {
-  const modalElement = document.getElementById("createNoteModal");
   const templateElement = document.getElementById("templates");
   const templateLoading = document.getElementById("templateImageLoading");
   const templateDiv = document.getElementById("templateDiv");
@@ -39,7 +79,6 @@ async function createNoteModal(
   const createBTN = document.getElementById("createBTN");
 
   if (
-    modalElement &&
     templateElement &&
     templateLoading &&
     noteBTN &&
@@ -157,4 +196,4 @@ async function createNoteModal(
   }
 }
 
-export { createNoteModal, getNoteModal };
+export { createNoteModal, getNoteModal, moveModal };
