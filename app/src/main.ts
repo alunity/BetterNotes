@@ -1,24 +1,40 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.min.js";
 import "./style.css";
-import { createNoteModal, getNoteModal, moveModal } from "./modal";
+import {
+  createNoteModal,
+  getNoteModal,
+  moveModal,
+  settingModal,
+} from "./modal";
 import { Canvas, ToolBar } from "./canvas";
-import { FileSystemNode, Note } from "./file";
+import { FileSystemNode, Note, evaluateFSPathName } from "./file";
 import downloadPDF from "./pdf";
 
 let FS = new FileSystemNode();
-const root = FS;
+let root = FS;
+
+async function handleImport(data: string) {
+  FS = FileSystemNode.fromJSON(JSON.parse(data));
+  root = FS;
+  renderFiles();
+}
 
 async function documents() {
   const newNote = document.getElementById("newNote");
   const back = document.getElementById("back");
+  const logo = document.getElementById("logo");
   renderFiles();
-  if (newNote && back) {
+  if (newNote && back && logo) {
     back.addEventListener("click", () => {
       if (FS.root) {
         FS = FS.root;
         renderFiles();
       }
+    });
+
+    logo.addEventListener("click", () => {
+      settingModal(root, handleImport);
     });
 
     createNoteModal(createNote, createDirectory);
@@ -34,7 +50,10 @@ async function documents() {
 function renderFiles() {
   const back = document.getElementById("back");
   const files = document.getElementById("files");
-  if (files && back) {
+  const path = document.getElementById("path");
+
+  if (files && back && path) {
+    path.innerHTML = evaluateFSPathName(FS);
     if (!FS.root) {
       back.classList.add("hide");
     } else {

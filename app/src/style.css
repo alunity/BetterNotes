@@ -121,3 +121,10 @@ img {
   top: 2em;
   right: 2em;
 }
+
+.path {
+  font-style: italic;
+  /* color: #fc7753; */
+  color: #f2efea;
+  color: #66d7d1;
+}

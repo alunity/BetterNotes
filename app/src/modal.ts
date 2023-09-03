@@ -1,5 +1,12 @@
 import { Modal } from "bootstrap";
-import { FileSystemNode, Note, isValidFSPath, moveFSItem } from "./file";
+import {
+  FileSystemNode,
+  Note,
+  createFileWindow,
+  download,
+  isValidFSPath,
+  moveFSItem,
+} from "./file";
 import downloadPDF from "./pdf";
 
 const templates = [
@@ -17,8 +24,40 @@ const templates = [
   ],
 ];
 
+const settingsListeners: Array<() => void> = [];
+
+function settingModal(
+  root: FileSystemNode,
+  handleImport: (data: string) => void
+) {
+  const modalElement = document.getElementById("settingsModal");
+  const importBTN = document.getElementById("importFS");
+  const exportBTN = document.getElementById("exportFS");
+  if (modalElement && importBTN && exportBTN) {
+    const modal = new Modal(modalElement);
+
+    importBTN.removeEventListener("click", settingsListeners[0]);
+    exportBTN.removeEventListener("click", settingsListeners[1]);
+
+    settingsListeners[0] = () => {
+      createFileWindow(handleImport);
+    };
+
+    settingsListeners[1] = () => {
+      download("notes.bn", JSON.stringify(root.toJSON()));
+    };
+
+    importBTN.addEventListener("click", settingsListeners[0]);
+    exportBTN.addEventListener("click", settingsListeners[1]);
+
+    modal.show();
+  }
+}
+
 let lastMoveBTNListener = () => {};
-let lastInputListener = (e: Event) => {};
+let lastInputListener = (e: Event) => {
+  e.target as HTMLInputElement;
+};
 
 function moveModal(
   root: FileSystemNode,
@@ -196,4 +235,4 @@ async function createNoteModal(
   }
 }
 
-export { createNoteModal, getNoteModal, moveModal };
+export { createNoteModal, getNoteModal, moveModal, settingModal };

@@ -3,17 +3,27 @@ interface noteData {
   backgrounds: Array<string>;
 }
 
+interface JSONFileSystemNode {
+  name: string;
+  notes: Array<{ name: string; data: noteData }>;
+  directories: Array<JSONFileSystemNode>;
+}
+
 class Note {
   name: string;
   data: noteData;
 
-  constructor(name: string, saveData?: noteData) {
+  constructor(name: string, data?: noteData) {
     this.name = name;
-    if (saveData) {
-      this.data = saveData;
+    if (data) {
+      this.data = data;
     } else {
       this.data = { strokes: [[[]]], backgrounds: [] };
     }
+  }
+
+  toJSON() {
+    return { name: this.name, data: this.data };
   }
 }
 
@@ -44,6 +54,39 @@ class FileSystemNode {
 
   addDirectory(directory: FileSystemNode) {
     this.directories.push(directory);
+  }
+
+  toJSON(): JSONFileSystemNode {
+    const directories = [];
+    const notes = [];
+
+    for (let i = 0; i < this.notes.length; i++) {
+      notes.push(this.notes[i].toJSON());
+    }
+
+    for (let i = 0; i < this.directories.length; i++) {
+      directories.push(this.directories[i].toJSON());
+    }
+    return { name: this.name, notes: notes, directories: directories };
+  }
+
+  static fromJSON(data: JSONFileSystemNode, root?: FileSystemNode) {
+    const node = new FileSystemNode();
+    node.name = data.name;
+    if (root) {
+      node.root = root;
+    } else {
+      node.root = null;
+    }
+
+    for (let i = 0; i < data.notes.length; i++) {
+      node.notes.push(new Note(data.notes[i].name, data.notes[i].data));
+    }
+
+    for (let i = 0; i < data.directories.length; i++) {
+      node.directories.push(FileSystemNode.fromJSON(data.directories[i], node));
+    }
+    return node;
   }
 }
 
@@ -105,21 +148,32 @@ function moveFSItem(
   }
 }
 
-const inp = document.createElement("input");
-inp.type = "file";
+function download(filename: string, data: string) {
+  const element = document.createElement("a");
+  element.href = "data:text/plain;charset=utf-8," + encodeURIComponent(data);
+  element.download = filename;
+  element.style.display = "none";
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+}
 
-inp.addEventListener("change", async () => {
-  if (inp.files === null) {
-    return;
-  }
-  const file = inp.files[0];
+function createFileWindow(callback: (data: string) => void) {
+  const inp = document.createElement("input");
+  inp.type = "file";
+  inp.accept = ".bn";
 
-  if (file) {
-    console.log(await file.text());
-  }
-});
+  inp.addEventListener("change", async () => {
+    if (inp.files === null) {
+      return;
+    }
+    const file = inp.files[0];
 
-function createFileWindow() {
+    if (file) {
+      callback(await file.text());
+    }
+  });
+
   inp.click();
 }
 
@@ -131,4 +185,5 @@ export {
   evaluateFSPathName,
   isValidFSPath,
   moveFSItem,
+  download,
 };
