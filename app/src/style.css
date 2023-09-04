@@ -148,3 +148,9 @@ img {
 .green {
   background-color: green;
 }
+
+.circle-center {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}

@@ -6,6 +6,7 @@ interface noteData {
 interface stroke {
   points: Array<Array<number>>;
   colour: string;
+  thickness: number;
 }
 
 interface JSONFileSystemNode {

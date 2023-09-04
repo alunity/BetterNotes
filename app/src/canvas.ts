@@ -50,10 +50,12 @@ interface iStrokes {
   points: Array<Array<number>>;
   path: Path2D;
   colour: string;
+  thickness: number;
 }
 
 const listener: { [key: string]: (e: Event) => void } = {};
 const colours = ["#000000", "#FFFFFF", "#AFDCEC", "#ff4040", "#c8ecc7"];
+const thicknesses = [3, 5, 8];
 
 function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
   const penBTN = document.getElementById("pen");
@@ -61,8 +63,16 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
   const addBTN = document.getElementById("add");
   const closeBTN = document.getElementById("close");
   const colourSelect = document.getElementById("colourSelect");
+  const thicknessSelect = document.getElementById("thicknessSelect");
 
-  if (penBTN && eraserBTN && addBTN && closeBTN && colourSelect) {
+  if (
+    penBTN &&
+    eraserBTN &&
+    addBTN &&
+    closeBTN &&
+    colourSelect &&
+    thicknessSelect
+  ) {
     // Remove previous event listeners and effect
     penBTN.className = "glow";
     eraserBTN.className = "glow";
@@ -73,9 +83,45 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
     closeBTN.removeEventListener("click", listener["closeBTN"]);
 
     colourSelect.innerHTML = "";
+    thicknessSelect.innerHTML = "";
+
+    for (let i = 0; i < thicknesses.length; i++) {
+      const div = document.createElement("div");
+      // div.classList.add("container");
+      div.classList.add("inline");
+      div.classList.add("align-middle");
+      div.classList.add("circle-center");
+      div.style.width = "40px";
+      div.style.height = "40px";
+
+      const span = document.createElement("span");
+      span.classList.add("glow");
+      span.classList.add("dot");
+      span.style.backgroundColor = "white";
+      span.style.width = thicknesses[i] * 4 + "px";
+      span.style.height = thicknesses[i] * 4 + "px";
+
+      span.addEventListener("click", () => {
+        for (let j = 0; j < thicknessSelect.children.length; j++) {
+          if (j == i) {
+            span.classList.add("selected");
+            span.classList.remove("glow");
+          } else {
+            thicknessSelect.children[j].children[0].classList.remove(
+              "selected"
+            );
+            thicknessSelect.children[j].children[0].classList.add("glow");
+          }
+        }
+        mainCanvas.thickness = thicknesses[i];
+      });
+
+      div.appendChild(span);
+      thicknessSelect.append(div);
+    }
 
     for (let i = 0; i < colours.length; i++) {
-      const span = document.createElement("spa");
+      const span = document.createElement("span");
       span.classList.add("align-middle");
       span.classList.add("glow");
       span.classList.add("dot");
@@ -165,6 +211,7 @@ class Canvas {
   note: Note;
 
   colour = "#000000";
+  thickness = 5;
 
   handleScrollWheel(e: WheelEvent) {
     if (e.deltaY > 0) {
@@ -235,9 +282,12 @@ class Canvas {
       {
         points: this.points,
         path: new Path2D(
-          getSvgPathFromStroke(getStroke(this.points, penOptions))
+          getSvgPathFromStroke(
+            getStroke(this.points, { ...penOptions, size: this.thickness })
+          )
         ),
         colour: this.colour,
+        thickness: this.thickness,
       },
     ]);
   }
@@ -289,9 +339,12 @@ class Canvas {
       {
         points: this.points,
         path: new Path2D(
-          getSvgPathFromStroke(getStroke(this.points, penOptions))
+          getSvgPathFromStroke(
+            getStroke(this.points, { ...penOptions, size: this.thickness })
+          )
         ),
         colour: this.colour,
+        thickness: this.thickness,
       },
     ]);
   }
@@ -301,9 +354,12 @@ class Canvas {
     this.strokes.push({
       points: this.points,
       path: new Path2D(
-        getSvgPathFromStroke(getStroke(this.points, penOptions))
+        getSvgPathFromStroke(
+          getStroke(this.points, { ...penOptions, size: this.thickness })
+        )
       ),
       colour: this.colour,
+      thickness: this.thickness,
     });
 
     this.points = [];
@@ -708,9 +764,12 @@ class Canvas {
         {
           points: this.points,
           path: new Path2D(
-            getSvgPathFromStroke(getStroke(this.points, penOptions))
+            getSvgPathFromStroke(
+              getStroke(this.points, { ...penOptions, size: this.thickness })
+            )
           ),
           colour: this.colour,
+          thickness: this.thickness,
         },
       ]);
   }
@@ -825,6 +884,7 @@ class Canvas {
     const strokePoints = this.strokes.map((x) => ({
       points: x.points,
       colour: x.colour,
+      thickness: x.thickness,
     }));
     const backgrounds = this.backgrounds.map((x) => x.src);
     const data: noteData = { backgrounds: backgrounds, strokes: strokePoints };
@@ -835,8 +895,13 @@ class Canvas {
   load(data: noteData) {
     this.strokes = data.strokes.map((x) => ({
       points: x.points,
-      path: new Path2D(getSvgPathFromStroke(getStroke(x.points, penOptions))),
+      path: new Path2D(
+        getSvgPathFromStroke(
+          getStroke(x.points, { ...penOptions, size: x.thickness })
+        )
+      ),
       colour: x.colour,
+      thickness: x.thickness,
     }));
     this.background = data.backgrounds;
   }
