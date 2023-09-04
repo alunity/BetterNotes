@@ -95,7 +95,12 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
       div.style.height = "40px";
 
       const span = document.createElement("span");
-      span.classList.add("glow");
+      if (i == 0) {
+        span.classList.add("selected");
+        mainCanvas.thickness = thicknesses[i];
+      } else {
+        span.classList.add("glow");
+      }
       span.classList.add("dot");
       span.style.backgroundColor = "white";
       span.style.width = thicknesses[i] * 4 + "px";
@@ -123,7 +128,12 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
     for (let i = 0; i < colours.length; i++) {
       const span = document.createElement("span");
       span.classList.add("align-middle");
-      span.classList.add("glow");
+      if (i == 0) {
+        span.classList.add("selected");
+        mainCanvas.colour = colours[i];
+      } else {
+        span.classList.add("glow");
+      }
       span.classList.add("dot");
       span.style.backgroundColor = colours[i];
       span.addEventListener("click", () => {
