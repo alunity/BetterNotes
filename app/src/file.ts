@@ -1,6 +1,11 @@
 interface noteData {
-  strokes: Array<Array<Array<number>>>;
+  strokes: Array<stroke>;
   backgrounds: Array<string>;
+}
+
+interface stroke {
+  points: Array<Array<number>>;
+  colour: string;
 }
 
 interface JSONFileSystemNode {
@@ -18,7 +23,7 @@ class Note {
     if (data) {
       this.data = data;
     } else {
-      this.data = { strokes: [[[]]], backgrounds: [] };
+      this.data = { strokes: [], backgrounds: [] };
     }
   }
 

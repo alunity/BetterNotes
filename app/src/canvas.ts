@@ -49,17 +49,20 @@ function pytag(x_1: number, y_1: number, x_2: number, y_2: number) {
 interface iStrokes {
   points: Array<Array<number>>;
   path: Path2D;
+  colour: string;
 }
 
-const listener: { [key: string]: () => void } = {};
+const listener: { [key: string]: (e: Event) => void } = {};
+const colours = ["#000000", "#FFFFFF", "#AFDCEC", "#ff4040", "#c8ecc7"];
 
 function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
   const penBTN = document.getElementById("pen");
   const eraserBTN = document.getElementById("eraser");
   const addBTN = document.getElementById("add");
   const closeBTN = document.getElementById("close");
+  const colourSelect = document.getElementById("colourSelect");
 
-  if (penBTN && eraserBTN && addBTN && closeBTN) {
+  if (penBTN && eraserBTN && addBTN && closeBTN && colourSelect) {
     // Remove previous event listeners and effect
     penBTN.className = "glow";
     eraserBTN.className = "glow";
@@ -67,8 +70,30 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
     penBTN.removeEventListener("click", listener["penBTN"]);
     eraserBTN.removeEventListener("click", listener["eraserBTN"]);
     addBTN.removeEventListener("click", listener["addBTN"]);
-
     closeBTN.removeEventListener("click", listener["closeBTN"]);
+
+    colourSelect.innerHTML = "";
+
+    for (let i = 0; i < colours.length; i++) {
+      const span = document.createElement("spa");
+      span.classList.add("align-middle");
+      span.classList.add("glow");
+      span.classList.add("dot");
+      span.style.backgroundColor = colours[i];
+      span.addEventListener("click", () => {
+        for (let j = 0; j < colourSelect.children.length; j++) {
+          if (j == i) {
+            colourSelect.children[j].classList.add("selected");
+            colourSelect.children[j].classList.remove("glow");
+          } else {
+            colourSelect.children[j].classList.remove("selected");
+            colourSelect.children[j].classList.add("glow");
+          }
+        }
+        mainCanvas.colour = colours[i];
+      });
+      colourSelect.appendChild(span);
+    }
 
     // Update event listeners for new canvas
     listener["penBTN"] = () => {
@@ -138,6 +163,8 @@ class Canvas {
   debug = false;
 
   note: Note;
+
+  colour = "#000000";
 
   handleScrollWheel(e: WheelEvent) {
     if (e.deltaY > 0) {
@@ -210,6 +237,7 @@ class Canvas {
         path: new Path2D(
           getSvgPathFromStroke(getStroke(this.points, penOptions))
         ),
+        colour: this.colour,
       },
     ]);
   }
@@ -263,6 +291,7 @@ class Canvas {
         path: new Path2D(
           getSvgPathFromStroke(getStroke(this.points, penOptions))
         ),
+        colour: this.colour,
       },
     ]);
   }
@@ -274,6 +303,7 @@ class Canvas {
       path: new Path2D(
         getSvgPathFromStroke(getStroke(this.points, penOptions))
       ),
+      colour: this.colour,
     });
 
     this.points = [];
@@ -609,7 +639,7 @@ class Canvas {
     }
 
     for (let i = 0; i < strokesToRender.length; i++) {
-      this.context.fillStyle = "#000000";
+      this.context.fillStyle = strokesToRender[i].colour;
       this.context.fill(strokesToRender[i].path);
 
       if (this.debug) {
@@ -680,6 +710,7 @@ class Canvas {
           path: new Path2D(
             getSvgPathFromStroke(getStroke(this.points, penOptions))
           ),
+          colour: this.colour,
         },
       ]);
   }
@@ -791,7 +822,10 @@ class Canvas {
   }
 
   save() {
-    const strokePoints = this.strokes.map((x) => x.points);
+    const strokePoints = this.strokes.map((x) => ({
+      points: x.points,
+      colour: x.colour,
+    }));
     const backgrounds = this.backgrounds.map((x) => x.src);
     const data: noteData = { backgrounds: backgrounds, strokes: strokePoints };
 
@@ -800,8 +834,9 @@ class Canvas {
 
   load(data: noteData) {
     this.strokes = data.strokes.map((x) => ({
-      points: x,
-      path: new Path2D(getSvgPathFromStroke(getStroke(x, penOptions))),
+      points: x.points,
+      path: new Path2D(getSvgPathFromStroke(getStroke(x.points, penOptions))),
+      colour: x.colour,
     }));
     this.background = data.backgrounds;
   }

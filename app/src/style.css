@@ -78,8 +78,12 @@ img {
   color: #fc7753;
 }
 
-.blue {
+.coralBlue {
   color: #66d7d1;
+}
+
+.coralBlue-bg {
+  background-color: #66d7d1;
 }
 
 .Phudu {
@@ -115,4 +119,32 @@ img {
   /* color: #fc7753; */
   color: #f2efea;
   color: #66d7d1;
+}
+
+.dot {
+  height: 25px;
+  width: 25px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.black {
+  background-color: black;
+}
+
+.white {
+  background-color: white;
+}
+
+.red {
+  background-color: red;
+}
+
+.blue {
+  background-color: #60c8eb;
+}
+
+.green {
+  background-color: green;
 }
