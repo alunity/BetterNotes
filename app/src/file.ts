@@ -105,7 +105,7 @@ function evaluateFSPathName(node: FileSystemNode) {
   return names.join("/");
 }
 
-function isValidFSPath(node: FileSystemNode, path: string) {
+function isValidFSPath(node: FileSystemNode, path: string): boolean {
   const directories = path.split("/");
   if (directories.length === 1 && directories[0] === "") {
     return true;

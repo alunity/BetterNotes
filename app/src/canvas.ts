@@ -1,5 +1,5 @@
 import { getStroke } from "perfect-freehand";
-import getSvgPathFromStroke from "./SvgPathFromStroke";
+import getSvgPathFromStroke from "./svgPathFromStroke";
 import "./canvas.css";
 import downloadPDF from "./pdf";
 import { Note, noteData } from "./file";
