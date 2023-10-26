@@ -5,6 +5,7 @@ import {
   createNoteModal,
   getNoteModal,
   moveModal,
+  searchModal,
   settingModal,
 } from "./modal";
 import { Canvas, ToolBar } from "./canvas";
@@ -24,8 +25,10 @@ async function documents() {
   const newNote = document.getElementById("newNote");
   const back = document.getElementById("back");
   const logo = document.getElementById("logo");
+  const search = document.getElementById("search");
+
   renderFiles();
-  if (newNote && back && logo) {
+  if (newNote && back && logo && search) {
     back.addEventListener("click", () => {
       if (FS.root) {
         FS = FS.root;
@@ -35,6 +38,13 @@ async function documents() {
 
     logo.addEventListener("click", () => {
       settingModal(root, handleImport);
+    });
+
+    search.addEventListener("click", () => {
+      searchModal(
+        (note: Note) => openNote(note),
+        (name: string) => findFSItem(name, root)
+      );
     });
 
     createNoteModal(createNote, createDirectory, (name: string) =>
@@ -73,7 +83,7 @@ function renderFiles() {
       div.classList.add("glow");
 
       const noteIcon = document.createElement("img");
-      noteIcon.src = "/BetterNotes/notes.svg";
+      noteIcon.src = "notes.svg";
       noteIcon.width = 40;
       noteIcon.height = 40;
       div.appendChild(noteIcon);
@@ -83,7 +93,7 @@ function renderFiles() {
       div.appendChild(span);
 
       const deleteIcon = document.createElement("img");
-      deleteIcon.src = "/BetterNotes/trash.svg";
+      deleteIcon.src = "trash.svg";
       deleteIcon.width = 40;
       deleteIcon.height = 40;
       deleteIcon.classList.add("float-right");
@@ -95,7 +105,7 @@ function renderFiles() {
       div.appendChild(deleteIcon);
 
       const moveIcon = document.createElement("img");
-      moveIcon.src = "/BetterNotes/arrows-exchange-alt.svg";
+      moveIcon.src = "arrows-exchange-alt.svg";
       moveIcon.width = 40;
       moveIcon.height = 40;
       moveIcon.classList.add("float-right");
@@ -125,7 +135,7 @@ function renderFiles() {
       div.classList.add("glow");
 
       const folderIcon = document.createElement("img");
-      folderIcon.src = "/BetterNotes/folder.svg";
+      folderIcon.src = "folder.svg";
       folderIcon.width = 40;
       folderIcon.height = 40;
       div.appendChild(folderIcon);
@@ -135,7 +145,7 @@ function renderFiles() {
       div.appendChild(span);
 
       const deleteIcon = document.createElement("img");
-      deleteIcon.src = "/BetterNotes/trash.svg";
+      deleteIcon.src = "trash.svg";
       deleteIcon.width = 40;
       deleteIcon.height = 40;
       deleteIcon.classList.add("float-right");
@@ -147,7 +157,7 @@ function renderFiles() {
       div.appendChild(deleteIcon);
 
       const moveIcon = document.createElement("img");
-      moveIcon.src = "/BetterNotes/arrows-exchange-alt.svg";
+      moveIcon.src = "arrows-exchange-alt.svg";
       moveIcon.width = 40;
       moveIcon.height = 40;
       moveIcon.classList.add("float-right");

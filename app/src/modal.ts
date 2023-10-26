@@ -67,7 +67,7 @@ function moveModal(
 ) {
   const modalElement = document.getElementById("moveModal");
   const input = document.getElementById("pathInput") as HTMLInputElement;
-  const moveBTN = document.getElementById("moveBTN") as HTMLInputElement;
+  const moveBTN = document.getElementById("moveBTN") as HTMLButtonElement;
   let path = "";
   if (input && moveBTN && modalElement) {
     input.value = "";
@@ -93,6 +93,46 @@ function moveModal(
       renderFiles();
     };
     moveBTN.addEventListener("click", lastMoveBTNListener);
+  }
+}
+
+function searchModal(
+  openNote: (note: Note) => void,
+  findFSItem: (name: string) => Number | FileSystemNode | Note
+) {
+  const modalElement = document.getElementById("searchModal");
+  const input = document.getElementById("searchInput") as HTMLInputElement;
+  const searchBTN = document.getElementById("searchBTN") as HTMLButtonElement;
+  let note: Number | Note | FileSystemNode = -1;
+  if (modalElement && input && searchBTN) {
+    const nInput = input.cloneNode(true) as HTMLInputElement;
+    const nBTN = searchBTN.cloneNode(true) as HTMLButtonElement;
+    nBTN.classList.add("disabled");
+
+    nInput.value = "";
+
+    nInput.addEventListener("input", (e: Event) => {
+      const input = e.target as HTMLInputElement;
+      note = findFSItem(input.value);
+
+      if (note instanceof Note) {
+        nBTN.classList.remove("disabled");
+      } else {
+        nBTN.classList.add("disabled");
+      }
+    });
+
+    nBTN.addEventListener("click", () => {
+      if (note instanceof Note) {
+        openNote(note);
+      }
+    });
+
+    input.replaceWith(nInput);
+    searchBTN.replaceWith(nBTN);
+
+    const modal = new Modal(modalElement);
+    modal.show();
   }
 }
 
@@ -236,4 +276,4 @@ async function createNoteModal(
   }
 }
 
-export { createNoteModal, getNoteModal, moveModal, settingModal };
+export { createNoteModal, getNoteModal, moveModal, settingModal, searchModal };

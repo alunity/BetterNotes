@@ -188,13 +188,13 @@ function findFSItem(
   root: FileSystemNode
 ): FileSystemNode | Note | Number {
   for (let i = 0; i < root.notes.length; i++) {
-    if (root.notes[i].name === name) {
+    if (root.notes[i].name.toLowerCase() === name.toLowerCase()) {
       return root.notes[i];
     }
   }
 
   for (let i = 0; i < root.directories.length; i++) {
-    if (root.directories[i].name === name) {
+    if (root.directories[i].name.toLowerCase() === name.toLowerCase()) {
       return root.directories[i];
     }
   }

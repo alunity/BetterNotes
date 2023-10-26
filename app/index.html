@@ -46,7 +46,7 @@
               id="logo"
               height="40"
               width="40"
-              class="glow float-left fixed"
+              class="glow float-left fixed m-4"
             />
           </div>
           <div class="col">
@@ -57,11 +57,18 @@
               src="/arrow-left.svg"
               height="40"
               width="40"
-              class="glow float-right hide"
+              class="glow float-right hide m-4"
               id="back"
             />
           </div>
         </div>
+        <img
+          src="/search.svg"
+          height="40"
+          width="40"
+          class="glow position-absolute bottom-0 start-0 m-4"
+          id="search"
+        />
       </div>
       <div class="container">
         <p id="path" class="text-center"></p>
@@ -173,6 +180,41 @@
               data-bs-dismiss="modal"
             >
               Move
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div data-bs-theme="dark" class="modal" tabindex="-1" id="searchModal">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Search</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <label>Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="searchInput"
+              aria-describedby=""
+            />
+          </div>
+          <div class="modal-footer">
+            <button
+              id="searchBTN"
+              type="button"
+              class="btn btn-primary"
+              data-bs-dismiss="modal"
+            >
+              Open
             </button>
           </div>
         </div>
