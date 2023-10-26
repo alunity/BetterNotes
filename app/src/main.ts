@@ -71,7 +71,7 @@ function renderFiles() {
       div.classList.add("glow");
 
       const noteIcon = document.createElement("img");
-      noteIcon.src = "/notes.svg";
+      noteIcon.src = "/BetterNotes/notes.svg";
       noteIcon.width = 40;
       noteIcon.height = 40;
       div.appendChild(noteIcon);
@@ -81,7 +81,7 @@ function renderFiles() {
       div.appendChild(span);
 
       const deleteIcon = document.createElement("img");
-      deleteIcon.src = "/trash.svg";
+      deleteIcon.src = "/BetterNotes/trash.svg";
       deleteIcon.width = 40;
       deleteIcon.height = 40;
       deleteIcon.classList.add("float-right");
@@ -93,7 +93,7 @@ function renderFiles() {
       div.appendChild(deleteIcon);
 
       const moveIcon = document.createElement("img");
-      moveIcon.src = "/arrows-exchange-alt.svg";
+      moveIcon.src = "/BetterNotes/arrows-exchange-alt.svg";
       moveIcon.width = 40;
       moveIcon.height = 40;
       moveIcon.classList.add("float-right");
@@ -123,7 +123,7 @@ function renderFiles() {
       div.classList.add("glow");
 
       const folderIcon = document.createElement("img");
-      folderIcon.src = "/folder.svg";
+      folderIcon.src = "/BetterNotes/folder.svg";
       folderIcon.width = 40;
       folderIcon.height = 40;
       div.appendChild(folderIcon);
@@ -133,7 +133,7 @@ function renderFiles() {
       div.appendChild(span);
 
       const deleteIcon = document.createElement("img");
-      deleteIcon.src = "/trash.svg";
+      deleteIcon.src = "/BetterNotes/trash.svg";
       deleteIcon.width = 40;
       deleteIcon.height = 40;
       deleteIcon.classList.add("float-right");
@@ -145,7 +145,7 @@ function renderFiles() {
       div.appendChild(deleteIcon);
 
       const moveIcon = document.createElement("img");
-      moveIcon.src = "/arrows-exchange-alt.svg";
+      moveIcon.src = "/BetterNotes/arrows-exchange-alt.svg";
       moveIcon.width = 40;
       moveIcon.height = 40;
       moveIcon.classList.add("float-right");
