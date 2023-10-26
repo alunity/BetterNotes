@@ -360,21 +360,23 @@ class Canvas {
   }
 
   handleDrawEnd() {
-    this.drawing = false;
-    this.strokes.push({
-      points: this.points,
-      path: new Path2D(
-        getSvgPathFromStroke(
-          getStroke(this.points, { ...penOptions, size: this.thickness })
-        )
-      ),
-      colour: this.colour,
-      thickness: this.thickness,
-    });
+    if (this.drawing) {
+      this.drawing = false;
+      this.strokes.push({
+        points: this.points,
+        path: new Path2D(
+          getSvgPathFromStroke(
+            getStroke(this.points, { ...penOptions, size: this.thickness })
+          )
+        ),
+        colour: this.colour,
+        thickness: this.thickness,
+      });
 
-    this.points = [];
+      this.points = [];
 
-    this.render();
+      this.render();
+    }
   }
 
   handleErase(x: number, y: number) {
