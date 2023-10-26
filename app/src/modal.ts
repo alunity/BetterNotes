@@ -54,11 +54,6 @@ function settingModal(
   }
 }
 
-let lastMoveBTNListener = () => {};
-let lastInputListener = (e: Event) => {
-  e.target as HTMLInputElement;
-};
-
 function moveModal(
   root: FileSystemNode,
   curr: FileSystemNode,
@@ -70,29 +65,30 @@ function moveModal(
   const moveBTN = document.getElementById("moveBTN") as HTMLButtonElement;
   let path = "";
   if (input && moveBTN && modalElement) {
+    const nInput = input.cloneNode(true) as HTMLInputElement;
+    const nBTN = moveBTN.cloneNode(true) as HTMLButtonElement;
+
     input.value = "";
 
     const modal = new Modal(modalElement);
     modal.show();
 
-    input.removeEventListener("input", lastInputListener);
-    lastInputListener = (e: Event) => {
+    nInput.addEventListener("input", (e: Event) => {
       const input = e.target as HTMLInputElement;
       path = input.value;
       if (isValidFSPath(root, path) && path.split("/")[0] !== item.name) {
-        moveBTN.classList.remove("disabled");
+        nBTN.classList.remove("disabled");
       } else {
-        moveBTN.classList.add("disabled");
+        nBTN.classList.add("disabled");
       }
-    };
-    input.addEventListener("input", lastInputListener);
+    });
 
-    moveBTN.removeEventListener("click", lastMoveBTNListener);
-    lastMoveBTNListener = () => {
+    nBTN.addEventListener("click", () => {
       moveFSItem(root, curr, item, path);
       renderFiles();
-    };
-    moveBTN.addEventListener("click", lastMoveBTNListener);
+    });
+    input.replaceWith(nInput);
+    moveBTN.replaceWith(nBTN);
   }
 }
 
