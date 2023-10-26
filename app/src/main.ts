@@ -8,7 +8,7 @@ import {
   settingModal,
 } from "./modal";
 import { Canvas, ToolBar } from "./canvas";
-import { FileSystemNode, Note, evaluateFSPathName } from "./file";
+import { FileSystemNode, Note, evaluateFSPathName, findFSItem } from "./file";
 import downloadPDF from "./pdf";
 
 let FS = new FileSystemNode();
@@ -37,7 +37,9 @@ async function documents() {
       settingModal(root, handleImport);
     });
 
-    createNoteModal(createNote, createDirectory);
+    createNoteModal(createNote, createDirectory, (name: string) =>
+      findFSItem(name, root)
+    );
     const modal = await getNoteModal();
     if (modal) {
       newNote.addEventListener("click", () => {

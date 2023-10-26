@@ -183,6 +183,35 @@ function createFileWindow(callback: (data: string) => void) {
   inp.click();
 }
 
+function findFSItem(
+  name: string,
+  root: FileSystemNode
+): FileSystemNode | Note | Number {
+  for (let i = 0; i < root.notes.length; i++) {
+    if (root.notes[i].name === name) {
+      return root.notes[i];
+    }
+  }
+
+  for (let i = 0; i < root.directories.length; i++) {
+    if (root.directories[i].name === name) {
+      return root.directories[i];
+    }
+  }
+
+  for (let i = 0; i < root.directories.length; i++) {
+    const result: FileSystemNode | Number | Note = findFSItem(
+      name,
+      root.directories[i]
+    );
+    if (result !== -1) {
+      return result;
+    }
+  }
+
+  return -1;
+}
+
 export {
   createFileWindow,
   FileSystemNode,
@@ -192,4 +221,5 @@ export {
   isValidFSPath,
   moveFSItem,
   download,
+  findFSItem,
 };

@@ -105,7 +105,8 @@ async function getNoteModal() {
 
 async function createNoteModal(
   createNote: (name: string, template: string) => void,
-  createDirectory: (name: string) => void
+  createDirectory: (name: string) => void,
+  FindFSItem: (name: string) => Number | FileSystemNode | Note
 ) {
   const templateElement = document.getElementById("templates");
   const templateLoading = document.getElementById("templateImageLoading");
@@ -166,7 +167,7 @@ async function createNoteModal(
     nameInput.addEventListener("input", (e: Event) => {
       const target = e.target as HTMLInputElement;
       name = target.value;
-      if (target.value.length === 0) {
+      if (name.length === 0 || FindFSItem(name) !== -1) {
         createBTN.classList.add("disabled");
       } else {
         createBTN.classList.remove("disabled");
