@@ -8,6 +8,7 @@ import {
   moveFSItem,
 } from "./file";
 import downloadPDF from "./pdf";
+import { iCanvasOptions } from "./canvas";
 
 const templates = [
   [
@@ -24,32 +25,68 @@ const templates = [
   ],
 ];
 
-const settingsListeners: Array<() => void> = [];
-
 function settingModal(
   root: FileSystemNode,
-  handleImport: (data: string) => void
+  handleImport: (data: string) => void,
+  options: iCanvasOptions
 ) {
   const modalElement = document.getElementById("settingsModal");
   const importBTN = document.getElementById("importFS");
   const exportBTN = document.getElementById("exportFS");
-  if (modalElement && importBTN && exportBTN) {
+
+  const drawingTablet = document.getElementById("drawingTablet");
+  const smooth = document.getElementById("smooth");
+  const interpolation = document.getElementById("interpolation");
+  const debug = document.getElementById("debug");
+  if (
+    modalElement &&
+    importBTN &&
+    exportBTN &&
+    drawingTablet &&
+    smooth &&
+    interpolation &&
+    debug
+  ) {
     const modal = new Modal(modalElement);
 
-    importBTN.removeEventListener("click", settingsListeners[0]);
-    exportBTN.removeEventListener("click", settingsListeners[1]);
+    const nImportBTN = importBTN.cloneNode(true);
+    const nExportBTN = exportBTN.cloneNode(true);
+    const nDrawingTablet = drawingTablet.cloneNode(true) as HTMLInputElement;
+    const nSmooth = smooth.cloneNode(true) as HTMLInputElement;
+    const nInterpolation = interpolation.cloneNode(true) as HTMLInputElement;
+    const nDebug = debug.cloneNode(true) as HTMLInputElement;
 
-    settingsListeners[0] = () => {
+    importBTN.replaceWith(nImportBTN);
+    exportBTN.replaceWith(nExportBTN);
+    drawingTablet.replaceWith(nDrawingTablet);
+    smooth.replaceWith(nSmooth);
+    interpolation.replaceWith(nInterpolation);
+    debug.replaceWith(nDebug);
+
+    nImportBTN.addEventListener("click", () => {
       createFileWindow(handleImport);
-    };
-
-    settingsListeners[1] = () => {
+    });
+    nExportBTN.addEventListener("click", () => {
       download("notes.bn", JSON.stringify(root.toJSON()));
-    };
+    });
 
-    importBTN.addEventListener("click", settingsListeners[0]);
-    exportBTN.addEventListener("click", settingsListeners[1]);
+    nDrawingTablet.checked = options.treatTouchAsStylus;
+    nSmooth.checked = options.smooth;
+    nInterpolation.checked = options.linearInterpolation;
+    nDebug.checked = options.debug;
 
+    nDrawingTablet.addEventListener("change", () => {
+      options.treatTouchAsStylus = nDrawingTablet.checked;
+    });
+    nSmooth.addEventListener("change", () => {
+      options.smooth = nSmooth.checked;
+    });
+    nInterpolation.addEventListener("change", () => {
+      options.linearInterpolation = nInterpolation.checked;
+    });
+    nDebug.addEventListener("change", () => {
+      options.debug = nDebug.checked;
+    });
     modal.show();
   }
 }
