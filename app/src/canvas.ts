@@ -53,6 +53,13 @@ interface iStrokes {
   thickness: number;
 }
 
+interface iCanvasOptions {
+  smooth: boolean;
+  linearInterpolation: boolean;
+  treatTouchAsStylus: boolean;
+  debug: boolean;
+}
+
 const listener: { [key: string]: (e: Event) => void } = {};
 const colours = ["#000000", "#FFFFFF", "#AFDCEC", "#ff4040", "#c8ecc7"];
 const thicknesses = [3, 5, 8];
@@ -204,18 +211,16 @@ class Canvas {
   ZOOM_MIN = 0.5;
   ZOOM_MAX = 10;
 
-  SMOOTH = true;
-
   INTERPOLATE_DIST = 10;
-  linearInterpolation = true;
-
-  treatTouchAsStylus = false;
 
   backgrounds: Array<HTMLImageElement> = [];
   GAPBETWEENPAGES = 20;
 
   listeners: iListeners = {};
 
+  smooth = true;
+  linearInterpolation = true;
+  treatTouchAsStylus = false;
   debug = false;
 
   note: Note;
@@ -560,7 +565,7 @@ class Canvas {
       }
     }
 
-    if (this.SMOOTH) {
+    if (this.smooth) {
       this.smoothCanvasScroll(x, y);
     } else {
       this.canvasScroll(x, y);
@@ -571,7 +576,7 @@ class Canvas {
     factor: number,
     x = this.canvasElement.width / 2,
     y = this.canvasElement.height / 2,
-    smooth = this.SMOOTH
+    smooth = this.smooth
   ) {
     if (this.zoomFactor < this.ZOOM_MIN && factor < 1) return;
     if (this.zoomFactor > this.ZOOM_MAX && factor > 1) return;
@@ -641,7 +646,7 @@ class Canvas {
   }
 
   canvasHorizontallyCenter() {
-    if (this.SMOOTH) {
+    if (this.smooth) {
       this.smoothCanvasScroll(
         (this.canvasElement.width / this.zoomFactor / 2 -
           this.xScroll -
@@ -934,7 +939,17 @@ class Canvas {
     return sum;
   }
 
-  constructor(width: number, height: number, note: Note) {
+  constructor(
+    width: number,
+    height: number,
+    note: Note,
+    options: iCanvasOptions
+  ) {
+    this.smooth = options.smooth;
+    this.linearInterpolation = options.linearInterpolation;
+    this.treatTouchAsStylus = options.treatTouchAsStylus;
+    this.debug = options.debug;
+
     this.note = note;
     this.load(note.data);
 
@@ -951,4 +966,4 @@ class Canvas {
   }
 }
 
-export { Canvas, ToolBar };
+export { Canvas, ToolBar, type iCanvasOptions };

@@ -8,12 +8,19 @@ import {
   searchModal,
   settingModal,
 } from "./modal";
-import { Canvas, ToolBar } from "./canvas";
+import { Canvas, ToolBar, iCanvasOptions } from "./canvas";
 import { FileSystemNode, Note, evaluateFSPathName, findFSItem } from "./file";
 import downloadPDF from "./pdf";
 
 let FS = new FileSystemNode();
 let root = FS;
+
+const canvasOptions: iCanvasOptions = {
+  smooth: true,
+  linearInterpolation: true,
+  treatTouchAsStylus: false,
+  debug: false,
+};
 
 async function handleImport(data: string) {
   FS = FileSystemNode.fromJSON(JSON.parse(data));
@@ -37,7 +44,7 @@ async function documents() {
     });
 
     logo.addEventListener("click", () => {
-      settingModal(root, handleImport);
+      settingModal(root, handleImport, canvasOptions);
     });
 
     search.addEventListener("click", () => {
@@ -217,7 +224,8 @@ function openNote(note: Note) {
     const canvas = new Canvas(
       window.innerWidth,
       window.innerHeight - toolBarElement.clientHeight,
-      note
+      note,
+      canvasOptions
     );
 
     ToolBar(canvas, openDocuments);
