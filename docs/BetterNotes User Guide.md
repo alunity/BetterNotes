@@ -59,6 +59,7 @@ Clicking the toggle on the previous menu allows you to create a directory.
 
 Deleting notes or directories can be done by clicking the bin icon next to them
 ![img](./attachments/20231029161811.png)
+
 **_Be careful when doing this_** because there is **_no confirmation_** .
 
 ## Moving notes or directories
