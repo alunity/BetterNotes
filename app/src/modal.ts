@@ -152,7 +152,10 @@ function moveModal(
     // Update button's disabled status
     if (
       isValidFSPath(root, nInput.value) &&
-      nInput.value.split("/")[0] !== item.name
+      nInput.value
+        .split("/")
+        [nInput.value.split("/").length - 1].toLowerCase() !==
+        item.name.toLowerCase()
     ) {
       nBTN.classList.remove("disabled");
     } else {
@@ -165,7 +168,10 @@ function moveModal(
     nInput.addEventListener("input", () => {
       if (
         isValidFSPath(root, nInput.value) &&
-        nInput.value.split("/")[0] !== item.name
+        nInput.value
+          .split("/")
+          [nInput.value.split("/").length - 1].toLowerCase() !==
+          item.name.toLowerCase()
       ) {
         nBTN.classList.remove("disabled");
       } else {

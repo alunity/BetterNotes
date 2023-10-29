@@ -113,7 +113,9 @@ function isValidFSPath(node: FileSystemNode, path: string): boolean {
     return true;
   }
   for (let i = 0; i < node.directories.length; i++) {
-    if (node.directories[i].name == directories[0]) {
+    if (
+      node.directories[i].name.toLowerCase() == directories[0].toLowerCase()
+    ) {
       return isValidFSPath(node.directories[i], directories.slice(1).join("/"));
     }
   }
@@ -133,7 +135,7 @@ function moveFSItem(
     curr.directories.splice(curr.directories.indexOf(item), 1);
     for (let i = 0; i < nodes.length; i++) {
       for (let j = 0; j < node.directories.length; j++) {
-        if (node.directories[j].name === nodes[i]) {
+        if (node.directories[j].name.toLowerCase() === nodes[i].toLowerCase()) {
           node = node.directories[j];
           break;
         }
@@ -146,7 +148,7 @@ function moveFSItem(
     curr.notes.splice(curr.notes.indexOf(item), 1);
     for (let i = 0; i < nodes.length; i++) {
       for (let j = 0; j < node.directories.length; j++) {
-        if (node.directories[j].name === nodes[i]) {
+        if (node.directories[j].name.toLowerCase() === nodes[i].toLowerCase()) {
           node = node.directories[j];
           break;
         }
