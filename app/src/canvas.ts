@@ -430,6 +430,7 @@ class Canvas {
           rect
         ) !== -1
       ) {
+        this.drawing = true;
         this.handleDrawStart(
           e.touches[0].clientX - rect.left,
           e.touches[0].clientY - rect.top,
@@ -466,6 +467,7 @@ class Canvas {
       let rect = (e.target as HTMLElement).getBoundingClientRect();
       if (
         this.canDraw &&
+        this.drawing &&
         this.pageCursorIsOn(
           e.touches[0].clientX,
           e.touches[0].clientY,
