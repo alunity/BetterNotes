@@ -14,17 +14,54 @@ import { iCanvasOptions } from "./canvas";
 
 const templates = [
   [
+    "White Plain",
+    "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/White%20Plain.pdf",
+  ],
+  [
+    "White Lined",
+    "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/White%20Lined.pdf",
+  ],
+  [
+    "White Grid",
+    "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/White%20Grid.pdf",
+  ],
+  [
+    "Yellow Plain",
+    "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/Yellow%20Plain.pdf",
+  ],
+  [
+    "Yellow Lined",
+    "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/Yellow%20Lined.pdf",
+  ],
+  [
+    "Yellow Grid",
+    "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/Yellow%20Grid.pdf",
+  ],
+  [
+    "Dark Plain",
+    "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/Dark%20Plain.pdf",
+  ],
+  [
+    "Dark Lined",
+    "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/Dark%20Lined.pdf",
+  ],
+  [
     "Dark Grid",
-    "https://raw.githubusercontent.com/flyguybravo/goodnotes/1f93ef6/Dark/Grid/Grid-5mm-Portrait-Dark.pdf",
+    "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/Dark%20Grid.pdf",
   ],
-  [
-    "Dark plain",
-    "https://raw.githubusercontent.com/flyguybravo/goodnotes/1f93ef6/Dark/Plain/Portrait-Dark.pdf",
-  ],
-  [
-    "Dark lined",
-    "https://raw.githubusercontent.com/flyguybravo/goodnotes/1f93ef6/Dark/Lined-College/Lined-Ruled-Portrait-Dark.pdf",
-  ],
+
+  // [
+  //   "Dark Grid",
+  //   "https://raw.githubusercontent.com/flyguybravo/goodnotes/1f93ef6/Dark/Grid/Grid-5mm-Portrait-Dark.pdf",
+  // ],
+  // [
+  //   "Dark plain",
+  //   "https://raw.githubusercontent.com/flyguybravo/goodnotes/1f93ef6/Dark/Plain/Portrait-Dark.pdf",
+  // ],
+  // [
+  //   "Dark lined",
+  //   "https://raw.githubusercontent.com/flyguybravo/goodnotes/1f93ef6/Dark/Lined-College/Lined-Ruled-Portrait-Dark.pdf",
+  // ],
 ];
 
 function settingModal(
