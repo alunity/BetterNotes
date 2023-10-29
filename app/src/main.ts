@@ -9,18 +9,19 @@ import {
   settingModal,
 } from "./modal";
 import { Canvas, ToolBar, iCanvasOptions } from "./canvas";
-import { FileSystemNode, Note, evaluateFSPathName, findFSItem } from "./file";
+import {
+  FileSystemNode,
+  Note,
+  evaluateFSPathName,
+  findFSItem,
+  loadCanvasOptions,
+} from "./file";
 import downloadPDF from "./pdf";
 
 let FS = new FileSystemNode();
 let root = FS;
 
-const canvasOptions: iCanvasOptions = {
-  smooth: true,
-  linearInterpolation: true,
-  treatTouchAsStylus: false,
-  debug: false,
-};
+const canvasOptions: iCanvasOptions = loadCanvasOptions();
 
 async function handleImport(data: string) {
   FS = FileSystemNode.fromJSON(JSON.parse(data));

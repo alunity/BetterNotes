@@ -1,3 +1,5 @@
+import { iCanvasOptions } from "./canvas";
+
 interface noteData {
   strokes: Array<stroke>;
   backgrounds: Array<string>;
@@ -212,6 +214,24 @@ function findFSItem(
   return -1;
 }
 
+function saveCanvasOptions(canvasOptions: iCanvasOptions) {
+  localStorage.options = JSON.stringify(canvasOptions);
+}
+
+function loadCanvasOptions(): iCanvasOptions {
+  const options: string = localStorage.options;
+  if (options === undefined) {
+    return {
+      smooth: true,
+      linearInterpolation: true,
+      treatTouchAsStylus: false,
+      debug: false,
+    };
+  } else {
+    return JSON.parse(options);
+  }
+}
+
 export {
   createFileWindow,
   FileSystemNode,
@@ -222,4 +242,6 @@ export {
   moveFSItem,
   download,
   findFSItem,
+  saveCanvasOptions,
+  loadCanvasOptions,
 };

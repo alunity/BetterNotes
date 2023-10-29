@@ -7,6 +7,7 @@ import {
   evaluateFSPathName,
   isValidFSPath,
   moveFSItem,
+  saveCanvasOptions,
 } from "./file";
 import downloadPDF from "./pdf";
 import { iCanvasOptions } from "./canvas";
@@ -78,15 +79,19 @@ function settingModal(
 
     nDrawingTablet.addEventListener("change", () => {
       options.treatTouchAsStylus = nDrawingTablet.checked;
+      saveCanvasOptions(options);
     });
     nSmooth.addEventListener("change", () => {
       options.smooth = nSmooth.checked;
+      saveCanvasOptions(options);
     });
     nInterpolation.addEventListener("change", () => {
       options.linearInterpolation = nInterpolation.checked;
+      saveCanvasOptions(options);
     });
     nDebug.addEventListener("change", () => {
       options.debug = nDebug.checked;
+      saveCanvasOptions(options);
     });
     modal.show();
   }
