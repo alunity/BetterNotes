@@ -4,6 +4,7 @@ import {
   Note,
   createFileWindow,
   download,
+  evaluateFSPathName,
   isValidFSPath,
   moveFSItem,
 } from "./file";
@@ -100,20 +101,30 @@ function moveModal(
   const modalElement = document.getElementById("moveModal");
   const input = document.getElementById("pathInput") as HTMLInputElement;
   const moveBTN = document.getElementById("moveBTN") as HTMLButtonElement;
-  let path = "";
   if (input && moveBTN && modalElement) {
     const nInput = input.cloneNode(true) as HTMLInputElement;
     const nBTN = moveBTN.cloneNode(true) as HTMLButtonElement;
 
-    input.value = "";
+    nInput.value = evaluateFSPathName(curr);
+
+    // Update button's disabled status
+    if (
+      isValidFSPath(root, nInput.value) &&
+      nInput.value.split("/")[0] !== item.name
+    ) {
+      nBTN.classList.remove("disabled");
+    } else {
+      nBTN.classList.add("disabled");
+    }
 
     const modal = new Modal(modalElement);
     modal.show();
 
-    nInput.addEventListener("input", (e: Event) => {
-      const input = e.target as HTMLInputElement;
-      path = input.value;
-      if (isValidFSPath(root, path) && path.split("/")[0] !== item.name) {
+    nInput.addEventListener("input", () => {
+      if (
+        isValidFSPath(root, nInput.value) &&
+        nInput.value.split("/")[0] !== item.name
+      ) {
         nBTN.classList.remove("disabled");
       } else {
         nBTN.classList.add("disabled");
@@ -121,7 +132,7 @@ function moveModal(
     });
 
     nBTN.addEventListener("click", () => {
-      moveFSItem(root, curr, item, path);
+      moveFSItem(root, curr, item, nInput.value);
       renderFiles();
     });
     input.replaceWith(nInput);
