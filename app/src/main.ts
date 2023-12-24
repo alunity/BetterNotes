@@ -276,7 +276,7 @@ async function start() {
       handleImport(await (await fileHandler.getFile()).text());
       handleStartApp();
     } catch {
-      console.log("Invalid file");
+      alert("Invalid .bn file");
     }
   }
 }

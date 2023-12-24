@@ -221,9 +221,13 @@ async function getFileHandler(newFile: boolean): Promise<FileSystemFileHandle> {
 }
 
 async function saveDataToDisk(fileHandler: FileSystemFileHandle, data: string) {
-  const writableStream = await fileHandler.createWritable();
-  await writableStream.write(data);
-  await writableStream.close();
+  if (fileHandler) {
+    const writableStream = await fileHandler.createWritable();
+    await writableStream.write(data);
+    await writableStream.close();
+  } else {
+    console.warn("No save mode enabled");
+  }
 }
 
 function findFSItem(
