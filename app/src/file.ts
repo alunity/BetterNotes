@@ -126,6 +126,7 @@ function moveFSItem(
   root: FileSystemNode,
   curr: FileSystemNode,
   item: FileSystemNode | Note,
+  fileHandler: FileSystemFileHandle,
   path: string
 ) {
   let node = root;
@@ -156,8 +157,10 @@ function moveFSItem(
     }
     node.notes.push(item);
   }
+  saveDataToDisk(fileHandler, JSON.stringify(root.toJSON()));
 }
 
+// Legacy file handle functions
 function download(filename: string, data: string) {
   const element = document.createElement("a");
   element.href = "data:text/plain;charset=utf-8," + encodeURIComponent(data);
@@ -185,6 +188,42 @@ function createFileWindow(callback: (data: string) => void) {
   });
 
   inp.click();
+}
+
+// New file handle functions
+async function getFileHandler(newFile: boolean): Promise<FileSystemFileHandle> {
+  const openPickerOpts = {
+    types: [
+      {
+        description: "BetterNotes Filesystem",
+        accept: {
+          "application/json": [".bn"],
+        },
+      },
+    ],
+    excludeAcceptAllOption: true,
+    multiple: false,
+  };
+
+  let fileHandler: Array<FileSystemFileHandle>;
+
+  if (newFile) {
+    // @ts-ignore
+    fileHandler = await window.showSaveFilePicker({
+      suggestedName: "documents.bn",
+      ...openPickerOpts,
+    });
+  } else {
+    // @ts-ignore
+    fileHandler = await window.showOpenFilePicker(openPickerOpts);
+  }
+  return fileHandler[0];
+}
+
+async function saveDataToDisk(fileHandler: FileSystemFileHandle, data: string) {
+  const writableStream = await fileHandler.createWritable();
+  await writableStream.write(data);
+  await writableStream.close();
 }
 
 function findFSItem(
@@ -246,4 +285,6 @@ export {
   findFSItem,
   saveCanvasOptions,
   loadCanvasOptions,
+  getFileHandler,
+  saveDataToDisk,
 };

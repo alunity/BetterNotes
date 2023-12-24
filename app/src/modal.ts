@@ -138,6 +138,7 @@ function moveModal(
   root: FileSystemNode,
   curr: FileSystemNode,
   item: FileSystemNode | Note,
+  fileHandler: FileSystemFileHandle,
   renderFiles: () => void
 ) {
   const modalElement = document.getElementById("moveModal");
@@ -180,7 +181,7 @@ function moveModal(
     });
 
     nBTN.addEventListener("click", () => {
-      moveFSItem(root, curr, item, nInput.value);
+      moveFSItem(root, curr, item, fileHandler, nInput.value);
       renderFiles();
     });
     input.replaceWith(nInput);
