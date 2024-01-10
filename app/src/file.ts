@@ -205,7 +205,7 @@ async function getFileHandler(newFile: boolean): Promise<FileSystemFileHandle> {
     multiple: false,
   };
 
-  let fileHandler: Array<FileSystemFileHandle>;
+  let fileHandler: FileSystemFileHandle;
 
   if (newFile) {
     // @ts-ignore
@@ -215,9 +215,9 @@ async function getFileHandler(newFile: boolean): Promise<FileSystemFileHandle> {
     });
   } else {
     // @ts-ignore
-    fileHandler = await window.showOpenFilePicker(openPickerOpts);
+    [fileHandler] = await window.showOpenFilePicker(openPickerOpts);
   }
-  return fileHandler[0];
+  return fileHandler;
 }
 
 async function saveDataToDisk(fileHandler: FileSystemFileHandle, data: string) {
