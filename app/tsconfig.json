@@ -19,7 +19,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    // Fix error on fileHandler.createWritable()
     "types": []
   },
   "include": ["src"]
