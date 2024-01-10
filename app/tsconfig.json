@@ -20,7 +20,7 @@
     "noFallthroughCasesInSwitch": true,
 
     // Fix error on fileHandler.createWritable()
-    "types": []
+    "types": ["@types/wicg-file-system-access"]
   },
   "include": ["src"]
 }
