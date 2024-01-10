@@ -228,6 +228,8 @@ class Canvas {
   colour = "#000000";
   thickness = 5;
 
+  saveCallback: Function;
+
   handleScrollWheel(e: WheelEvent) {
     if (e.deltaY > 0) {
       // Right, Zoom out, down
@@ -380,6 +382,7 @@ class Canvas {
 
       this.points = [];
 
+      this.saveToDisk();
       this.render();
     }
   }
@@ -404,6 +407,7 @@ class Canvas {
     }
 
     if (erased) {
+      this.saveToDisk();
       this.render();
     }
   }
@@ -911,6 +915,11 @@ class Canvas {
     return data;
   }
 
+  saveToDisk() {
+    this.note.data = this.save();
+    this.saveCallback();
+  }
+
   load(data: noteData) {
     this.strokes = data.strokes.map((x) => ({
       points: x.points,
@@ -945,12 +954,15 @@ class Canvas {
     width: number,
     height: number,
     note: Note,
-    options: iCanvasOptions
+    options: iCanvasOptions,
+    saveCallBack: Function
   ) {
     this.smooth = options.smooth;
     this.linearInterpolation = options.linearInterpolation;
     this.treatTouchAsStylus = options.treatTouchAsStylus;
     this.debug = options.debug;
+
+    this.saveCallback = saveCallBack;
 
     this.note = note;
     this.load(note.data);

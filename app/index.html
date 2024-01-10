@@ -37,7 +37,36 @@
         class="glow float-right"
       />
     </div>
-    <div id="documents">
+    <div data-bs-theme="dark" id="start">
+      <div class="position-absolute top-50 start-50 translate-middle">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title Phudu">BetterNotes</h5>
+            <p class="card-text">
+              Import or create your .bn file to get started!
+            </p>
+            <p class="card-text fw-bold">
+              Alternatively you can continue without saving your data. You can
+              always enable saving from the settings menu.
+            </p>
+            <p class="card-text fst-italic">
+              If this is your first time here, check out the
+              <a
+                href="https://github.com/alunity/BetterNotes/blob/main/docs/BetterNotes%20User%20Guide.md"
+                >user guide
+              </a>
+            </p>
+
+            <div class="center">
+              <button class="btn btn-primary" id="import">Import</button>
+              <button class="btn btn-success" id="create">Create</button>
+              <button class="btn btn-danger" id="noSave">Don't save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="documents" class="hide">
       <div class="p-1">
         <div class="row">
           <div class="col">
@@ -50,7 +79,7 @@
             />
           </div>
           <div class="col">
-            <h1 class="text-center isabelline Phudu">Documents</h1>
+            <h1 class="text-center isabelline Phudu">betternotes</h1>
           </div>
           <div class="col">
             <img

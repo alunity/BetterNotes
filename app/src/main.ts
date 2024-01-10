@@ -14,16 +14,20 @@ import {
   Note,
   evaluateFSPathName,
   findFSItem,
+  getFileHandler,
   loadCanvasOptions,
+  saveDataToDisk,
 } from "./file";
 import downloadPDF from "./pdf";
+
+let fileHandler: FileSystemFileHandle;
 
 let FS = new FileSystemNode();
 let root = FS;
 
 const canvasOptions: iCanvasOptions = loadCanvasOptions();
 
-async function handleImport(data: string) {
+function handleImport(data: string) {
   FS = FileSystemNode.fromJSON(JSON.parse(data));
   root = FS;
   renderFiles();
@@ -119,7 +123,7 @@ function renderFiles() {
       moveIcon.classList.add("float-right");
       moveIcon.id = "move";
       moveIcon.addEventListener("click", () => {
-        moveModal(root, FS, FS.notes[i], renderFiles);
+        moveModal(root, FS, FS.notes[i], fileHandler, renderFiles);
       });
       div.appendChild(moveIcon);
 
@@ -160,6 +164,7 @@ function renderFiles() {
       deleteIcon.id = "delete";
       deleteIcon.addEventListener("click", () => {
         FS.directories.splice(i, 1);
+        saveDataToDisk(fileHandler, JSON.stringify(root.toJSON()));
         renderFiles();
       });
       div.appendChild(deleteIcon);
@@ -171,7 +176,7 @@ function renderFiles() {
       moveIcon.classList.add("float-right");
       moveIcon.id = "move";
       moveIcon.addEventListener("click", () => {
-        moveModal(root, FS, FS.directories[i], renderFiles);
+        moveModal(root, FS, FS.directories[i], fileHandler, renderFiles);
       });
       div.appendChild(moveIcon);
 
@@ -206,11 +211,13 @@ async function createNote(name: string, template: string) {
   const note = new Note(name);
   note.data.backgrounds = await downloadPDF(template);
   FS.addNote(note);
+  saveDataToDisk(fileHandler, JSON.stringify(root.toJSON()));
   openNote(note);
 }
 
 function createDirectory(name: string) {
   FS.addDirectory(new FileSystemNode(name, FS));
+  saveDataToDisk(fileHandler, JSON.stringify(root.toJSON()));
   renderFiles();
 }
 
@@ -226,7 +233,8 @@ function openNote(note: Note) {
       window.innerWidth,
       window.innerHeight - toolBarElement.clientHeight,
       note,
-      canvasOptions
+      canvasOptions,
+      () => saveDataToDisk(fileHandler, JSON.stringify(root.toJSON()))
     );
 
     ToolBar(canvas, openDocuments);
@@ -235,4 +243,43 @@ function openNote(note: Note) {
   }
 }
 
+async function start() {
+  const importBTN = document.getElementById("import");
+  const createBTN = document.getElementById("create");
+  const noSaveBTN = document.getElementById("noSave");
+
+  if (importBTN && createBTN && noSaveBTN) {
+    importBTN.addEventListener("click", async () => {
+      fileHandler = await getFileHandler(false);
+      handleImportFile(fileHandler);
+    });
+    createBTN.addEventListener("click", async () => {
+      fileHandler = await getFileHandler(true);
+      handleStartApp();
+    });
+
+    noSaveBTN.addEventListener("click", () => handleStartApp());
+  }
+
+  function handleStartApp() {
+    const documents = document.getElementById("documents");
+    const startElement = document.getElementById("start");
+
+    if (documents && startElement) {
+      documents.classList.remove("hide");
+      startElement.classList.add("hide");
+    }
+  }
+
+  async function handleImportFile(fileHandler: FileSystemFileHandle) {
+    try {
+      handleImport(await (await fileHandler.getFile()).text());
+      handleStartApp();
+    } catch {
+      alert("Invalid .bn file");
+    }
+  }
+}
+
+start();
 documents();
