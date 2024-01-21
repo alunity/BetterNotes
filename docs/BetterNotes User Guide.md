@@ -1,3 +1,13 @@
+# Start screen
+
+- BetterNotes now handles saving data automatically!
+- To use the automatic saving system, either import your .bn file (by pressing import and selecting it using your operating system's file window) or by creating it (by pressing create and selecting where you want it to be saved using your operating system's file window).
+  - Now anytime you make any change (e.g. edit a note, move a directory, rename a directory...) the changes will be immediately written to your .bn file.
+- Of course you are free to forgo saving your data entirely by pressing don't save.
+  - Do note that you are still able to manually export your data using the legacy saving system in the settings menu which is detailed below.
+
+![Image of start screen](./attachments/image.png)
+
 # Settings
 
 To start with you should probably configure your settings. Do so by clicking on the BetterNotes logo in the top left
@@ -6,7 +16,7 @@ To start with you should probably configure your settings. Do so by clicking on 
 
 ## Data
 
-- This is where you import and export your data. Please note that this is not done automatically, you have to manually import and export your data.
+- This is where you can manually import and export your data. Please note that this can now be done automatically, by either creating or uploading your \*.bn file when you start the application, as detailed previously.
 - Pressing export, downloads a \*.bn file, which contains all of your notes and directories encoded in JSON.
   - Make sure to do this before closing the application
 - Pressing import opens a OS specific window asking for you to upload your .bn file
