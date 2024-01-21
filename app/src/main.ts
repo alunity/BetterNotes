@@ -290,5 +290,4 @@ if (document.location.href.includes("dino")) {
     "dino",
     "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/Dark%20Grid.pdf"
   );
-  openNote(findFSItem("dino", root) as Note);
 }
