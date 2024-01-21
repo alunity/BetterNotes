@@ -261,16 +261,6 @@ async function start() {
     noSaveBTN.addEventListener("click", () => handleStartApp());
   }
 
-  function handleStartApp() {
-    const documents = document.getElementById("documents");
-    const startElement = document.getElementById("start");
-
-    if (documents && startElement) {
-      documents.classList.remove("hide");
-      startElement.classList.add("hide");
-    }
-  }
-
   async function handleImportFile(fileHandler: FileSystemFileHandle) {
     try {
       handleImport(await (await fileHandler.getFile()).text());
@@ -281,5 +271,24 @@ async function start() {
   }
 }
 
+function handleStartApp() {
+  const documents = document.getElementById("documents");
+  const startElement = document.getElementById("start");
+
+  if (documents && startElement) {
+    documents.classList.remove("hide");
+    startElement.classList.add("hide");
+  }
+}
+
 start();
 documents();
+if (document.location.href.includes("dino")) {
+  canvasOptions.treatTouchAsStylus = true;
+  handleStartApp();
+  createNote(
+    "dino",
+    "https://raw.githubusercontent.com/alunity/BetterNotes/5daf74c/Templates/Dark%20Grid.pdf"
+  );
+  openNote(findFSItem("dino", root) as Note);
+}
