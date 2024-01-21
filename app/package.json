@@ -11,7 +11,7 @@
   "devDependencies": {
     "@types/bootstrap": "^5.2.6",
     "typescript": "^5.0.2",
-    "vite": "^4.4.12"
+    "vite": "^4.5.2"
   },
   "dependencies": {
     "@types/wicg-file-system-access": "^2023.10.4",
