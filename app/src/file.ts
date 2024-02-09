@@ -269,7 +269,7 @@ function loadCanvasOptions(): iCanvasOptions {
     return {
       smooth: true,
       linearInterpolation: true,
-      treatTouchAsStylus: false,
+      onlyWriteWithApplePencil: false,
       debug: false,
     };
   } else {

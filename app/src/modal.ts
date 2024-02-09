@@ -73,7 +73,7 @@ function settingModal(
   const importBTN = document.getElementById("importFS");
   const exportBTN = document.getElementById("exportFS");
 
-  const drawingTablet = document.getElementById("drawingTablet");
+  const applePencil = document.getElementById("applePencil");
   const smooth = document.getElementById("smooth");
   const interpolation = document.getElementById("interpolation");
   const debug = document.getElementById("debug");
@@ -81,7 +81,7 @@ function settingModal(
     modalElement &&
     importBTN &&
     exportBTN &&
-    drawingTablet &&
+    applePencil &&
     smooth &&
     interpolation &&
     debug
@@ -90,14 +90,14 @@ function settingModal(
 
     const nImportBTN = importBTN.cloneNode(true);
     const nExportBTN = exportBTN.cloneNode(true);
-    const nDrawingTablet = drawingTablet.cloneNode(true) as HTMLInputElement;
+    const nApplePencil = applePencil.cloneNode(true) as HTMLInputElement;
     const nSmooth = smooth.cloneNode(true) as HTMLInputElement;
     const nInterpolation = interpolation.cloneNode(true) as HTMLInputElement;
     const nDebug = debug.cloneNode(true) as HTMLInputElement;
 
     importBTN.replaceWith(nImportBTN);
     exportBTN.replaceWith(nExportBTN);
-    drawingTablet.replaceWith(nDrawingTablet);
+    applePencil.replaceWith(nApplePencil);
     smooth.replaceWith(nSmooth);
     interpolation.replaceWith(nInterpolation);
     debug.replaceWith(nDebug);
@@ -109,13 +109,13 @@ function settingModal(
       download("notes.bn", JSON.stringify(root.toJSON()));
     });
 
-    nDrawingTablet.checked = options.treatTouchAsStylus;
+    nApplePencil.checked = options.onlyWriteWithApplePencil;
     nSmooth.checked = options.smooth;
     nInterpolation.checked = options.linearInterpolation;
     nDebug.checked = options.debug;
 
-    nDrawingTablet.addEventListener("change", () => {
-      options.treatTouchAsStylus = nDrawingTablet.checked;
+    nApplePencil.addEventListener("change", () => {
+      options.onlyWriteWithApplePencil = nApplePencil.checked;
       saveCanvasOptions(options);
     });
     nSmooth.addEventListener("change", () => {

@@ -284,7 +284,6 @@ function handleStartApp() {
 start();
 documents();
 if (document.location.href.includes("dino")) {
-  canvasOptions.treatTouchAsStylus = true;
   handleStartApp();
   createNote(
     "dino",

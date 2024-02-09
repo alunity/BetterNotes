@@ -56,7 +56,7 @@ interface iStrokes {
 interface iCanvasOptions {
   smooth: boolean;
   linearInterpolation: boolean;
-  treatTouchAsStylus: boolean;
+  onlyWriteWithApplePencil: boolean;
   debug: boolean;
 }
 
@@ -160,18 +160,29 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
 
     // Update event listeners for new canvas
     listener["penBTN"] = () => {
-      penBTN.className = "active";
-      eraserBTN.className = "glow";
-
-      mainCanvas.canDraw = true;
+      // Toggle
+      mainCanvas.canDraw = !mainCanvas.canDraw;
       mainCanvas.erasing = false;
+
+      eraserBTN.className = "glow";
+      if (mainCanvas.canDraw) {
+        penBTN.className = "active";
+      } else {
+        penBTN.className = "";
+        penBTN.className = "glow";
+      }
     };
 
     listener["eraserBTN"] = () => {
-      eraserBTN.className = "active";
-      penBTN.className = "glow";
       mainCanvas.canDraw = false;
-      mainCanvas.erasing = true;
+      mainCanvas.erasing = !mainCanvas.erasing;
+
+      penBTN.className = "glow";
+      if (mainCanvas.erasing) {
+        eraserBTN.className = "active";
+      } else {
+        eraserBTN.className = "glow";
+      }
     };
 
     listener["addBTN"] = () => {
@@ -220,7 +231,7 @@ class Canvas {
 
   smooth = true;
   linearInterpolation = true;
-  treatTouchAsStylus = false;
+  onlyWriteWithApplePencil = false;
   debug = false;
 
   note: Note;
@@ -418,102 +429,104 @@ class Canvas {
   handleTouchStart(e: TouchEvent) {
     e.preventDefault();
 
+    let rect = (e.target as HTMLElement).getBoundingClientRect();
+
+    let applePencilInput = false;
+
     // Check for apple pencil
+    if (this.onlyWriteWithApplePencil) {
+      // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
+      applePencilInput = e.touches[0].touchType === "stylus";
+    } else {
+      applePencilInput = true;
+    }
 
     if (
-      // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
-      e.touches[0].touchType === "stylus" ||
-      this.treatTouchAsStylus
+      this.canDraw &&
+      this.pageCursorIsOn(e.touches[0].clientX, e.touches[0].clientY, rect) !==
+        -1 &&
+      applePencilInput
     ) {
-      let rect = (e.target as HTMLElement).getBoundingClientRect();
-      if (
-        this.canDraw &&
-        this.pageCursorIsOn(
+      this.drawing = true;
+      this.handleDrawStart(
+        e.touches[0].clientX - rect.left,
+        e.touches[0].clientY - rect.top,
+        e.touches[0].force
+      );
+    } else if (this.erasing && applePencilInput) {
+      this.handleErase(
+        e.touches[0].clientX - rect.left,
+        e.touches[0].clientY - rect.top
+      );
+      return;
+    } else {
+      this.lastTouchPosition = [e.touches[0].clientX, e.touches[0].clientY];
+      if (e.touches.length === 2) {
+        this.lastDist = pytag(
           e.touches[0].clientX,
           e.touches[0].clientY,
-          rect
-        ) !== -1
-      ) {
-        this.drawing = true;
-        this.handleDrawStart(
-          e.touches[0].clientX - rect.left,
-          e.touches[0].clientY - rect.top,
-          e.touches[0].force
-        );
-      } else if (this.erasing) {
-        this.handleErase(
-          e.touches[0].clientX - rect.left,
-          e.touches[0].clientY - rect.top
+          e.touches[1].clientX,
+          e.touches[1].clientY
         );
       }
-      return;
-    }
-    this.lastTouchPosition = [e.touches[0].clientX, e.touches[0].clientY];
-    if (e.touches.length === 2) {
-      this.lastDist = pytag(
-        e.touches[0].clientX,
-        e.touches[0].clientY,
-        e.touches[1].clientX,
-        e.touches[1].clientY
-      );
     }
   }
 
   handleTouchMove(e: TouchEvent) {
     e.preventDefault();
+    let rect = (e.target as HTMLElement).getBoundingClientRect();
+
+    let applePencilInput = false;
 
     // Check for apple pencil
-    if (
+    if (this.onlyWriteWithApplePencil) {
       // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
-      e.touches[0].touchType === "stylus" ||
-      this.treatTouchAsStylus
-    ) {
-      let rect = (e.target as HTMLElement).getBoundingClientRect();
-      if (
-        this.canDraw &&
-        this.drawing &&
-        this.pageCursorIsOn(
-          e.touches[0].clientX,
-          e.touches[0].clientY,
-          rect
-        ) !== -1
-      ) {
-        this.handleDraw(
-          e.touches[0].clientX - rect.left,
-          e.touches[0].clientY - rect.top,
-          e.touches[0].force
-        );
-      } else if (this.erasing) {
-        this.handleErase(
-          e.touches[0].clientX - rect.left,
-          e.touches[0].clientY - rect.top
-        );
-      }
-      return;
+      applePencilInput = e.touches[0].touchType === "stylus";
+    } else {
+      applePencilInput = true;
     }
 
-    const dx = e.touches[0].clientX - this.lastTouchPosition[0];
-    const dy = e.touches[0].clientY - this.lastTouchPosition[1];
-
-    this.lastTouchPosition[0] = e.touches[0].clientX;
-    this.lastTouchPosition[1] = e.touches[0].clientY;
-
-    this.scroll(dx, dy);
-    if (e.touches.length === 2) {
-      const dist = pytag(
-        e.touches[0].clientX,
-        e.touches[0].clientY,
-        e.touches[1].clientX,
-        e.touches[1].clientY
+    if (
+      this.canDraw &&
+      this.pageCursorIsOn(e.touches[0].clientX, e.touches[0].clientY, rect) !==
+        -1 &&
+      applePencilInput
+    ) {
+      this.handleDraw(
+        e.touches[0].clientX - rect.left,
+        e.touches[0].clientY - rect.top,
+        e.touches[0].force
       );
-
-      this.zoom(
-        Math.sqrt(dist / this.lastDist),
-        (e.touches[0].clientX + e.touches[1].clientX) / 2,
-        (e.touches[0].clientY + e.touches[1].clientY) / 2
+    } else if (this.erasing && applePencilInput) {
+      this.handleErase(
+        e.touches[0].clientX - rect.left,
+        e.touches[0].clientY - rect.top
       );
+      return;
+    } else {
+      const dx = e.touches[0].clientX - this.lastTouchPosition[0];
+      const dy = e.touches[0].clientY - this.lastTouchPosition[1];
 
-      this.lastDist = dist;
+      this.lastTouchPosition[0] = e.touches[0].clientX;
+      this.lastTouchPosition[1] = e.touches[0].clientY;
+
+      this.scroll(dx, dy);
+      if (e.touches.length === 2) {
+        const dist = pytag(
+          e.touches[0].clientX,
+          e.touches[0].clientY,
+          e.touches[1].clientX,
+          e.touches[1].clientY
+        );
+
+        this.zoom(
+          Math.sqrt(dist / this.lastDist),
+          (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          (e.touches[0].clientY + e.touches[1].clientY) / 2
+        );
+
+        this.lastDist = dist;
+      }
     }
   }
 
@@ -959,7 +972,7 @@ class Canvas {
   ) {
     this.smooth = options.smooth;
     this.linearInterpolation = options.linearInterpolation;
-    this.treatTouchAsStylus = options.treatTouchAsStylus;
+    this.onlyWriteWithApplePencil = options.onlyWriteWithApplePencil;
     this.debug = options.debug;
 
     this.saveCallback = saveCallBack;
