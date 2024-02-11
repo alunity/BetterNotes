@@ -31,6 +31,10 @@ img {
   transition: 0.25s;
 }
 
+.inactive {
+  opacity: 0.6;
+}
+
 .glow:hover {
   opacity: 1 !important;
 }

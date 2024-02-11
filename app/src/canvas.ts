@@ -81,8 +81,11 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
     thicknessSelect
   ) {
     // Remove previous event listeners and effect
-    penBTN.className = "glow";
-    eraserBTN.className = "glow";
+
+    // penBTN.className = "glow";
+    // eraserBTN.className = "glow";
+    penBTN.className = "inactive";
+    eraserBTN.className = "inactive";
 
     penBTN.removeEventListener("click", listener["penBTN"]);
     eraserBTN.removeEventListener("click", listener["eraserBTN"]);
@@ -164,12 +167,13 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
       mainCanvas.canDraw = !mainCanvas.canDraw;
       mainCanvas.erasing = false;
 
-      eraserBTN.className = "glow";
+      // eraserBTN.className = "glow";
+      eraserBTN.className = "inactive";
       if (mainCanvas.canDraw) {
         penBTN.className = "active";
       } else {
-        penBTN.className = "";
-        penBTN.className = "glow";
+        // penBTN.className = "glow";
+        penBTN.className = "inactive";
       }
     };
 
@@ -177,11 +181,13 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
       mainCanvas.canDraw = false;
       mainCanvas.erasing = !mainCanvas.erasing;
 
-      penBTN.className = "glow";
+      // penBTN.className = "glow";
+      penBTN.className = "inactive";
       if (mainCanvas.erasing) {
         eraserBTN.className = "active";
       } else {
-        eraserBTN.className = "glow";
+        // eraserBTN.className = "glow";
+        eraserBTN.className = "inactive";
       }
     };
 
