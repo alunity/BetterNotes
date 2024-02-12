@@ -1,16 +1,19 @@
 import { iCanvasOptions } from "./canvas";
 
+// Interface for note canvas data
 interface noteData {
   strokes: Array<stroke>;
   backgrounds: Array<string>;
 }
 
+// Interface for strokes which make up an annotation
 interface stroke {
   points: Array<Array<number>>;
   colour: string;
   thickness: number;
 }
 
+// Interface for JSON representation of FileSystemNode
 interface JSONFileSystemNode {
   name: string;
   notes: Array<{ name: string; data: noteData }>;
@@ -26,11 +29,13 @@ class Note {
     if (data) {
       this.data = data;
     } else {
+      // If no data is passed, set data to empty arrays
       this.data = { strokes: [], backgrounds: [] };
     }
   }
 
   toJSON() {
+    // JSON representation of Note
     return { name: this.name, data: this.data };
   }
 }
@@ -45,6 +50,7 @@ class FileSystemNode {
     if (name) {
       this.name = name;
     } else {
+      // If no name is provided, set name to default "" (empty string)
       this.name = "";
     }
 
@@ -68,16 +74,21 @@ class FileSystemNode {
     const directories = [];
     const notes = [];
 
+    // Convert all notes to JSON
     for (let i = 0; i < this.notes.length; i++) {
       notes.push(this.notes[i].toJSON());
     }
 
+    // Convert all directories to JSON
     for (let i = 0; i < this.directories.length; i++) {
       directories.push(this.directories[i].toJSON());
     }
+
+    // Return JSON representation of FileSystemNode
     return { name: this.name, notes: notes, directories: directories };
   }
 
+  // Static method allowing for FileSystemNode to be created from JSONFileSystemNode
   static fromJSON(data: JSONFileSystemNode, root?: FileSystemNode) {
     const node = new FileSystemNode();
     node.name = data.name;
@@ -98,6 +109,7 @@ class FileSystemNode {
   }
 }
 
+// Recursively backtrack from a given node to obtain path name
 function evaluateFSPathName(node: FileSystemNode) {
   const names = [];
   while (node.root) {
@@ -107,6 +119,9 @@ function evaluateFSPathName(node: FileSystemNode) {
   return names.join("/");
 }
 
+// Attempt to traverse a path
+// If succesful the path is valid
+// If not successful the path is invalid
 function isValidFSPath(node: FileSystemNode, path: string): boolean {
   const directories = path.split("/");
   if (directories.length === 1 && directories[0] === "") {
@@ -122,6 +137,7 @@ function isValidFSPath(node: FileSystemNode, path: string): boolean {
   return false;
 }
 
+// Move directory or note from one directory to another
 function moveFSItem(
   root: FileSystemNode,
   curr: FileSystemNode,
@@ -132,8 +148,10 @@ function moveFSItem(
   let node = root;
   const nodes = path.split("/");
   if ("root" in item) {
-    // Directory
+    // Remove directory
     curr.directories.splice(curr.directories.indexOf(item), 1);
+
+    // Traverse to desired new location
     for (let i = 0; i < nodes.length; i++) {
       for (let j = 0; j < node.directories.length; j++) {
         if (node.directories[j].name.toLowerCase() === nodes[i].toLowerCase()) {
@@ -142,10 +160,14 @@ function moveFSItem(
         }
       }
     }
+
+    // Add directory to new location
     node.directories.push(item);
     item.root = node;
   } else {
-    // Note
+    // Remove directory
+
+    // Traverse to desired new location
     curr.notes.splice(curr.notes.indexOf(item), 1);
     for (let i = 0; i < nodes.length; i++) {
       for (let j = 0; j < node.directories.length; j++) {
@@ -155,12 +177,17 @@ function moveFSItem(
         }
       }
     }
+
+    // Add directory to new location
     node.notes.push(item);
   }
+
+  // Save data to disk
   saveDataToDisk(fileHandler, JSON.stringify(root.toJSON()));
 }
 
 // Legacy file handle functions
+// Download JSON to disk
 function download(filename: string, data: string) {
   const element = document.createElement("a");
   element.href = "data:text/plain;charset=utf-8," + encodeURIComponent(data);
@@ -171,6 +198,7 @@ function download(filename: string, data: string) {
   document.body.removeChild(element);
 }
 
+// Create an operating system open file window to allow user to select file
 function createFileWindow(callback: (data: string) => void) {
   const inp = document.createElement("input");
   inp.type = "file";
@@ -191,6 +219,7 @@ function createFileWindow(callback: (data: string) => void) {
 }
 
 // New file handle functions
+// Create an operating system open file window to allow user to select file to upload or create a BetterNotes save file
 async function getFileHandler(newFile: boolean): Promise<FileSystemFileHandle> {
   const openPickerOpts = {
     types: [
@@ -220,6 +249,7 @@ async function getFileHandler(newFile: boolean): Promise<FileSystemFileHandle> {
   return fileHandler;
 }
 
+// Save note data to disk
 async function saveDataToDisk(fileHandler: FileSystemFileHandle, data: string) {
   if (fileHandler) {
     const writableStream = await fileHandler.createWritable();
@@ -230,16 +260,20 @@ async function saveDataToDisk(fileHandler: FileSystemFileHandle, data: string) {
   }
 }
 
+// Find a note or directory, searching by name
+// If the FSItem cannot be find, -1 is returned
 function findFSItem(
   name: string,
   root: FileSystemNode
 ): FileSystemNode | Note | Number {
+  // Search notes
   for (let i = 0; i < root.notes.length; i++) {
     if (root.notes[i].name.toLowerCase() === name.toLowerCase()) {
       return root.notes[i];
     }
   }
 
+  // Search directories
   for (let i = 0; i < root.directories.length; i++) {
     if (root.directories[i].name.toLowerCase() === name.toLowerCase()) {
       return root.directories[i];
@@ -247,6 +281,7 @@ function findFSItem(
   }
 
   for (let i = 0; i < root.directories.length; i++) {
+    // Recursively traverse directories
     const result: FileSystemNode | Number | Note = findFSItem(
       name,
       root.directories[i]
@@ -256,16 +291,20 @@ function findFSItem(
     }
   }
 
+  // If no file is found, return -1
   return -1;
 }
 
+// Save canvas options to localstorage
 function saveCanvasOptions(canvasOptions: iCanvasOptions) {
   localStorage.options = JSON.stringify(canvasOptions);
 }
 
+// Load canvas options from localstorage
 function loadCanvasOptions(): iCanvasOptions {
   const options: string = localStorage.options;
   if (options === undefined) {
+    // If no data is stored in localstorage, use default
     return {
       smooth: true,
       linearInterpolation: true,

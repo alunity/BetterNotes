@@ -4,6 +4,7 @@ import "./canvas.css";
 import downloadPDF from "./pdf";
 import { Note, noteData } from "./file";
 
+// Default pen options
 const penOptions = {
   size: 5,
   smoothing: 0.48,
@@ -40,12 +41,14 @@ interface iListeners {
   [name: string]: any;
 }
 
+// Find distance between to points defined in the 2d plane
 function pytag(x_1: number, y_1: number, x_2: number, y_2: number) {
   const dx = x_2 - x_1;
   const dy = y_2 - y_1;
   return Math.sqrt(dx * dx + dy * dy);
 }
 
+// Interface for a pen stroke
 interface iStrokes {
   points: Array<Array<number>>;
   path: Path2D;
@@ -61,10 +64,14 @@ interface iCanvasOptions {
 }
 
 const listener: { [key: string]: (e: Event) => void } = {};
+
+// Predefined colours and thicknesses
 const colours = ["#000000", "#FFFFFF", "#AFDCEC", "#ff4040", "#c8ecc7"];
 const thicknesses = [3, 5, 8];
 
+// Define a function called ToolBar that takes two arguments: mainCanvas and openDocuments
 function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
+  // Get the HTML elements with the specified IDs
   const penBTN = document.getElementById("pen");
   const eraserBTN = document.getElementById("eraser");
   const addBTN = document.getElementById("add");
@@ -72,6 +79,7 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
   const colourSelect = document.getElementById("colourSelect");
   const thicknessSelect = document.getElementById("thicknessSelect");
 
+  // Check if all the HTML elements exist
   if (
     penBTN &&
     eraserBTN &&
@@ -82,28 +90,31 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
   ) {
     // Remove previous event listeners and effect
 
-    // penBTN.className = "glow";
-    // eraserBTN.className = "glow";
+    // Set the class name of penBTN and eraserBTN to "inactive"
     penBTN.className = "inactive";
     eraserBTN.className = "inactive";
 
+    // Remove the event listeners for the click event on penBTN, eraserBTN, addBTN, and closeBTN
     penBTN.removeEventListener("click", listener["penBTN"]);
     eraserBTN.removeEventListener("click", listener["eraserBTN"]);
     addBTN.removeEventListener("click", listener["addBTN"]);
     closeBTN.removeEventListener("click", listener["closeBTN"]);
 
+    // Clear the innerHTML of colourSelect and thicknessSelect
     colourSelect.innerHTML = "";
     thicknessSelect.innerHTML = "";
 
+    // Loop through the thicknesses array
     for (let i = 0; i < thicknesses.length; i++) {
+      // Create a new div element and set its class and style properties
       const div = document.createElement("div");
-      // div.classList.add("container");
       div.classList.add("inline");
       div.classList.add("align-middle");
       div.classList.add("circle-center");
       div.style.width = "40px";
       div.style.height = "40px";
 
+      // Create a new span element and set its class and style properties
       const span = document.createElement("span");
       if (i == 0) {
         span.classList.add("selected");
@@ -116,8 +127,12 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
       span.style.width = thicknesses[i] * 4 + "px";
       span.style.height = thicknesses[i] * 4 + "px";
 
+      // Add a click event listener to the span element
       span.addEventListener("click", () => {
+        // Loop through the children of thicknessSelect
         for (let j = 0; j < thicknessSelect.children.length; j++) {
+          // If the current child is the clicked span, add the "selected" class and remove the "glow" class
+          // Otherwise, remove the "selected" class and add the "glow" class
           if (j == i) {
             span.classList.add("selected");
             span.classList.remove("glow");
@@ -128,14 +143,18 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
             thicknessSelect.children[j].children[0].classList.add("glow");
           }
         }
+        // Set the thickness of mainCanvas to the current thickness
         mainCanvas.thickness = thicknesses[i];
       });
 
+      // Append the span element to the div element and append the div element to thicknessSelect
       div.appendChild(span);
       thicknessSelect.append(div);
     }
 
+    // Loop through the colours array
     for (let i = 0; i < colours.length; i++) {
+      // Create a new span element and set its class and style properties
       const span = document.createElement("span");
       span.classList.add("align-middle");
       if (i == 0) {
@@ -146,8 +165,13 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
       }
       span.classList.add("dot");
       span.style.backgroundColor = colours[i];
+
+      // Add a click event listener to the span element
       span.addEventListener("click", () => {
+        // Loop through the children of colourSelect
         for (let j = 0; j < colourSelect.children.length; j++) {
+          // If the current child is the clicked span, add the "selected" class and remove the "glow" class
+          // Otherwise, remove the "selected" class and add the "glow" class
           if (j == i) {
             colourSelect.children[j].classList.add("selected");
             colourSelect.children[j].classList.remove("glow");
@@ -156,47 +180,45 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
             colourSelect.children[j].classList.add("glow");
           }
         }
+        // Set the colour of mainCanvas to the current colour
         mainCanvas.colour = colours[i];
       });
+
+      // Append the span element to colourSelect
       colourSelect.appendChild(span);
     }
 
-    // Update event listeners for new canvas
+    // Define the event listeners for the pen and eraser buttons
     listener["penBTN"] = () => {
-      // Toggle
+      // Toggle the canDraw property of mainCanvas and set the erasing property to false
       mainCanvas.canDraw = !mainCanvas.canDraw;
       mainCanvas.erasing = false;
 
-      // eraserBTN.className = "glow";
+      // Set the class name of eraserBTN to "inactive"
       eraserBTN.className = "inactive";
+      // If canDraw is true, set the class name of penBTN to "active"
+      // Otherwise, set it to "inactive"
       if (mainCanvas.canDraw) {
         penBTN.className = "active";
       } else {
-        // penBTN.className = "glow";
         penBTN.className = "inactive";
       }
     };
 
     listener["eraserBTN"] = () => {
+      // Set the canDraw property of mainCanvas to false and toggle the erasing property
       mainCanvas.canDraw = false;
       mainCanvas.erasing = !mainCanvas.erasing;
 
-      // penBTN.className = "glow";
+      // Set the class name of penBTN to "inactive"
       penBTN.className = "inactive";
+      // If erasing is true, set the class name of eraserBTN to "active"
+      // Otherwise, set it to "inactive"
       if (mainCanvas.erasing) {
         eraserBTN.className = "active";
       } else {
-        // eraserBTN.className = "glow";
         eraserBTN.className = "inactive";
       }
-    };
-
-    listener["addBTN"] = () => {
-      mainCanvas.addBackground();
-    };
-    listener["closeBTN"] = () => {
-      mainCanvas.note.data = mainCanvas.save();
-      openDocuments();
     };
 
     // Add new listeners
@@ -218,6 +240,7 @@ class Canvas {
   drawing = false;
   points: Array<Array<number>> = [];
 
+  // Define constants which define behaviour of canvas
   xScroll = 0;
   yScroll = 0;
   SCROLL_DECEL = 0.8;
@@ -230,23 +253,26 @@ class Canvas {
 
   INTERPOLATE_DIST = 10;
 
-  backgrounds: Array<HTMLImageElement> = [];
-  GAPBETWEENPAGES = 20;
-
-  listeners: iListeners = {};
-
   smooth = true;
   linearInterpolation = true;
   onlyWriteWithApplePencil = false;
   debug = false;
 
+  // Store page backgrounds/templates
+  backgrounds: Array<HTMLImageElement> = [];
+  GAPBETWEENPAGES = 20;
+
+  listeners: iListeners = {};
+
   note: Note;
 
+  // Default pen colour and thickness
   colour = "#000000";
   thickness = 5;
 
   saveCallback: Function;
 
+  // Handle behaviour of scroll wheel
   handleScrollWheel(e: WheelEvent) {
     if (e.deltaY > 0) {
       // Right, Zoom out, down
@@ -269,30 +295,40 @@ class Canvas {
       }
     }
 
+    // Prevent default behaviour
     e.preventDefault();
   }
 
+  // Handle behaviour when pressing the mouse down
   handleMouseDown(e: MouseEvent) {
     let rect = (e.target as HTMLElement).getBoundingClientRect();
+    // Check if mouse1 is down and mouse is on the page
     if (
       e.buttons == 1 &&
       this.pageCursorIsOn(e.clientX, e.clientY, rect) !== -1
     ) {
       if (this.canDraw) {
+        // Draw on canvas
         this.drawing = true;
         this.handleDrawStart(e.clientX - rect.left, e.clientY - rect.top, 0.5);
       } else if (this.erasing) {
+        // Erase
         this.handleErase(e.clientX - rect.left, e.clientY - rect.top);
       }
     }
   }
 
+  // Handle behaviour when pressing mousedown is released
   handleMouseUp() {
+    // Stop drawing
     this.handleDrawEnd();
   }
 
+  // Handle behaviour when moving them mouse
   handleMouseMove(e: MouseEvent) {
     let rect = (e.target as HTMLElement).getBoundingClientRect();
+
+    // If mouse is off page, stop drawing
     if (this.pageCursorIsOn(e.clientX, e.clientY, rect) === -1) {
       this.handleMouseUp();
       return;
@@ -306,12 +342,16 @@ class Canvas {
     }
   }
 
+  // Handle when you start drawing a stroke
   handleDrawStart(x: number, y: number, pressure: number) {
+    // Add current mouse position to the array of points that make up the stroke
     this.points.push([
       x / this.zoomFactor - this.xScroll,
       y / this.zoomFactor - this.yScroll,
       pressure,
     ]);
+
+    // Render the new pen stroke
     this.renderStrokes([
       {
         points: this.points,
@@ -326,7 +366,9 @@ class Canvas {
     ]);
   }
 
+  // Handle when you are drawing a stroke
   handleDraw(x: number, y: number, pressure: number) {
+    // Compute distance between current and previous point
     const dist = pytag(
       x / this.zoomFactor - this.xScroll,
       y / this.zoomFactor - this.yScroll,
@@ -334,7 +376,7 @@ class Canvas {
       this.points[this.points.length - 1][1]
     );
 
-    // Interpolation
+    // Interpolation if distance is too large
     if (
       dist > this.INTERPOLATE_DIST / this.zoomFactor &&
       this.linearInterpolation
@@ -349,6 +391,7 @@ class Canvas {
         this.yScroll -
         this.points[this.points.length - 1][1];
 
+      // Add points at even intervals between the current and last point
       for (let i = 0; i < Math.floor(dist / this.INTERPOLATE_DIST); i++) {
         this.points.push([
           this.points[this.points.length - 1][0] +
@@ -359,13 +402,14 @@ class Canvas {
       }
     }
 
+    // Add current mouse position to points
     this.points.push([
       x / this.zoomFactor - this.xScroll,
       y / this.zoomFactor - this.yScroll,
       pressure,
     ]);
 
-    if (!(this.points.length % 10)) {
+    if (this.points.length % 10) {
       this.render();
     }
     // Only render then new line being drawn
@@ -383,7 +427,9 @@ class Canvas {
     ]);
   }
 
+  // Handle when you finish drawing a stroke
   handleDrawEnd() {
+    // Only take action if previously drawing
     if (this.drawing) {
       this.drawing = false;
       this.strokes.push({
@@ -397,17 +443,24 @@ class Canvas {
         thickness: this.thickness,
       });
 
+      // Clear array of points
       this.points = [];
 
+      // Save to disk
       this.saveToDisk();
+
+      // Rerender strokes
       this.render();
     }
   }
 
   handleErase(x: number, y: number) {
     let erased = false;
+
+    // Check every stroke
     for (let i = 0; i < this.strokes.length; i++) {
       for (let j = 0; j < this.strokes[i].points.length; j++) {
+        // Check if distance between cursor and stroke is less than 10
         if (
           pytag(
             x / this.zoomFactor - this.xScroll,
@@ -416,6 +469,7 @@ class Canvas {
             this.strokes[i].points[j][1]
           ) <= 10
         ) {
+          // Remove stroke
           this.strokes.splice(i, 1);
           erased = true;
           break;
@@ -423,23 +477,27 @@ class Canvas {
       }
     }
 
+    // Save and rerender if strokes are erased
     if (erased) {
       this.saveToDisk();
       this.render();
     }
   }
 
+  // Store last touch position
   lastTouchPosition: Array<number> = [];
   lastDist = 0;
 
+  // Handle beginning of touch input
   handleTouchStart(e: TouchEvent) {
+    // Prevent default zooming behaviour
     e.preventDefault();
 
     let rect = (e.target as HTMLElement).getBoundingClientRect();
 
     let applePencilInput = false;
 
-    // Check for apple pencil
+    // Check if input is  apple pencil
     if (this.onlyWriteWithApplePencil) {
       // @ts-ignore Ignore lack of touchtype attribute on any browser that isn't safari
       applePencilInput = e.touches[0].touchType === "stylus";
@@ -453,6 +511,7 @@ class Canvas {
         -1 &&
       applePencilInput
     ) {
+      // Draw
       this.drawing = true;
       this.handleDrawStart(
         e.touches[0].clientX - rect.left,
@@ -460,13 +519,16 @@ class Canvas {
         e.touches[0].force
       );
     } else if (this.erasing && applePencilInput) {
+      // Erase
       this.handleErase(
         e.touches[0].clientX - rect.left,
         e.touches[0].clientY - rect.top
       );
       return;
     } else {
+      // Store last primary touch position
       this.lastTouchPosition = [e.touches[0].clientX, e.touches[0].clientY];
+      // Find distance between two touch points
       if (e.touches.length === 2) {
         this.lastDist = pytag(
           e.touches[0].clientX,
@@ -498,18 +560,21 @@ class Canvas {
         -1 &&
       applePencilInput
     ) {
+      // Draw
       this.handleDraw(
         e.touches[0].clientX - rect.left,
         e.touches[0].clientY - rect.top,
         e.touches[0].force
       );
     } else if (this.erasing && applePencilInput) {
+      // Erase
       this.handleErase(
         e.touches[0].clientX - rect.left,
         e.touches[0].clientY - rect.top
       );
       return;
     } else {
+      // Compare current and last touch points, to determine how much to scroll by
       const dx = e.touches[0].clientX - this.lastTouchPosition[0];
       const dy = e.touches[0].clientY - this.lastTouchPosition[1];
 
@@ -517,7 +582,9 @@ class Canvas {
       this.lastTouchPosition[1] = e.touches[0].clientY;
 
       this.scroll(dx, dy);
+
       if (e.touches.length === 2) {
+        // Compare last two touch points, to decide whether pinch gesture is to zoom in or zoom out
         const dist = pytag(
           e.touches[0].clientX,
           e.touches[0].clientY,
@@ -525,6 +592,7 @@ class Canvas {
           e.touches[1].clientY
         );
 
+        // Zoom depending on the ratio between the current distance between touch points and the previous distance
         this.zoom(
           Math.sqrt(dist / this.lastDist),
           (e.touches[0].clientX + e.touches[1].clientX) / 2,
@@ -536,13 +604,17 @@ class Canvas {
     }
   }
 
+  // Handle the end of touch input
   handleTouchEnd(e: TouchEvent) {
     e.preventDefault();
 
+    // Stop drawing
     this.handleDrawEnd();
   }
 
+  // Determine which page the cursor is on
   pageCursorIsOn(x: number, y: number, rect: DOMRect) {
+    // Define the borders of the page
     const TOP_LEFT = [-this.xScroll, -this.yScroll];
     const POS = [
       TOP_LEFT[0] + (x - rect.left) / this.zoomFactor,
@@ -551,6 +623,7 @@ class Canvas {
     let currY = 0;
 
     for (let i = 0; i < this.backgrounds.length; i++) {
+      // If the borders are within the current coordinates then cursors is on current page
       if (
         POS[0] > 0 &&
         POS[1] > currY &&
@@ -561,10 +634,13 @@ class Canvas {
       }
       currY += this.backgrounds[i].height + this.GAPBETWEENPAGES;
     }
+    // If cannot determine the page, page is not on cursor, return -1
     return -1;
   }
 
+  // General scroll interface
   scroll(x: number, y: number) {
+    // Constraints, to not let user scroll page out of view
     if (x < 0) {
       if (
         (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll >=
@@ -590,6 +666,7 @@ class Canvas {
       }
     }
 
+    // Perform smooth scroll animation depending on whether or not the user has specified to use smooth animations in the canvas options
     if (this.smooth) {
       this.smoothCanvasScroll(x, y);
     } else {
@@ -597,14 +674,18 @@ class Canvas {
     }
   }
 
+  // General zoom interface
   zoom(
     factor: number,
     x = this.canvasElement.width / 2,
     y = this.canvasElement.height / 2,
     smooth = this.smooth
   ) {
+    // Don't zoom if preconditions aren't met
     if (this.zoomFactor < this.ZOOM_MIN && factor < 1) return;
     if (this.zoomFactor > this.ZOOM_MAX && factor > 1) return;
+
+    // If smooth is specified, use smooth animation
     if (smooth) {
       this.smoothCanvasZoom(factor, x, y);
     } else {
@@ -613,6 +694,7 @@ class Canvas {
         this.canvasElement.width / this.zoomFactor >
         this.backgrounds[0].width
       ) {
+        // Horizontally center canvas if off center
         this.canvasHorizontallyCenter();
       }
     }
@@ -626,14 +708,19 @@ class Canvas {
       distX = distX * (1 - this.SCROLL_DECEL);
     }
 
+    // Scroll canvas
     this.canvasScroll(distX, distY);
+
+    // Declerate canvas
     distY *= this.SCROLL_DECEL;
     distX *= this.SCROLL_DECEL;
 
     if (Math.abs(distY) < 0.001 && Math.abs(distX) < 0.001) {
+      // If velocity is neglible, stop scrolling
       return;
     }
 
+    // Request animation frame from the browser to allow for smooth scrolling
     requestAnimationFrame(
       this.smoothCanvasScroll.bind(this, distX, distY, true)
     );
@@ -651,13 +738,16 @@ class Canvas {
 
     this.canvasZoom(vel, x, y);
 
+    // Decelerate zooming
     if (vel > 1) {
       vel *= decel;
     } else if (vel < 1) {
       vel /= decel;
     }
 
+    // If velocity is negligible, stop zooming
     if (vel > lb && vel < ub) {
+      // If page is off center, horizontally center
       if (
         this.canvasElement.width / this.zoomFactor >
         this.backgrounds[0].width
@@ -667,10 +757,12 @@ class Canvas {
       return;
     }
 
+    // Request animation frame from the browser to allow for smooth zooming
     requestAnimationFrame(this.smoothCanvasZoom.bind(this, vel, x, y));
   }
 
   canvasHorizontallyCenter() {
+    // Scroll to horizontally center page
     if (this.smooth) {
       this.smoothCanvasScroll(
         (this.canvasElement.width / this.zoomFactor / 2 -
@@ -690,6 +782,7 @@ class Canvas {
     }
   }
 
+  // Primitive which scrolls canvas
   canvasScroll(x: number, y: number) {
     this.xScroll += x / this.zoomFactor;
     this.yScroll += y / this.zoomFactor;
@@ -698,19 +791,28 @@ class Canvas {
     this.render();
   }
 
+  // Primitive which zooms canvas
   canvasZoom(
     factor: number,
     x = this.canvasElement.width / 2,
     y = this.canvasElement.height / 2
   ) {
+    // Scroll to orgin
     this.canvasScroll(-x, -y);
+
+    // Increase zoom factor
     this.zoomFactor *= factor;
 
+    // Remove previous transformation
     this.context.resetTransform();
 
+    // Zoom
     this.context.scale(this.zoomFactor, this.zoomFactor);
     this.context.translate(this.xScroll, this.yScroll);
+    // Rerender
     this.render();
+
+    // Scroll canvas back to original position
     this.canvasScroll(x, y);
   }
 
@@ -722,6 +824,8 @@ class Canvas {
       (this.canvasElement.width * 1) / this.zoomFactor - this.xScroll,
       (this.canvasElement.height * 1) / this.zoomFactor - this.yScroll,
     ];
+
+    // Check if strokes are in view
     for (let i = 0; i < strokes.length; i++) {
       for (let j = 0; j < strokes[i].points.length; j++) {
         if (
@@ -730,6 +834,7 @@ class Canvas {
           strokes[i].points[j][0] < BOTTOM_RIGHT[0] &&
           strokes[i].points[j][1] < BOTTOM_RIGHT[1]
         ) {
+          // If in view, render
           strokesToRender.push(strokes[i]);
           break;
         }
@@ -746,11 +851,13 @@ class Canvas {
           const stroke = getStroke([strokesToRender[i].points[j]], {
             ...penOptions,
           });
+          // Generate SVG
           const pathData = getSvgPathFromStroke(stroke);
           const path = new Path2D(pathData);
 
           this.context.fillStyle = "#FF0000";
 
+          // Draw SVG
           this.context.fill(path);
         }
       }
@@ -777,13 +884,16 @@ class Canvas {
 
     // Render PDF
     for (let i = 0; i < this.backgrounds.length; i++) {
+      // Check if pages are in view
       if (
         BOTTOM_RIGHT[0] > 0 &&
         BOTTOM_RIGHT[1] > currY &&
         TOP_LEFT[0] < this.backgrounds[i].width &&
         TOP_LEFT[1] < currY + this.backgrounds[i].height
       ) {
+        // Render page
         this.context.drawImage(this.backgrounds[i], 0, currY);
+        // Render background
         this.context.strokeRect(
           0,
           currY,
@@ -795,13 +905,18 @@ class Canvas {
     }
   }
 
+  // Render
   render() {
+    // Clear canvas
     this.clearCanvas();
 
+    // Render background
     this.renderBackground();
 
+    // Render strokes
     this.renderStrokes(this.strokes);
     if (this.drawing)
+      // Render current stroke
       this.renderStrokes([
         {
           points: this.points,
@@ -835,17 +950,21 @@ class Canvas {
     this.context.restore();
   }
 
+  // Resize the canvas
   resizeCanvas(width: number, height: number) {
     this.canvasElement.height = height;
     this.canvasElement.width = width;
   }
 
+  // Add another page to the document
   addBackground(num = this.backgrounds.length - 1) {
     this.backgrounds.push(this.backgrounds[num]);
     this.render();
   }
 
+  // Define a method called bindListeners
   bindListeners() {
+    // Bind the event handlers to the current context (this)
     this.listeners["mousemove"] = this.handleMouseMove.bind(this);
     this.listeners["mousedown"] = this.handleMouseDown.bind(this);
     this.listeners["mouseup"] = this.handleMouseUp.bind(this);
@@ -854,6 +973,7 @@ class Canvas {
     this.listeners["touchmove"] = this.handleTouchMove.bind(this);
     this.listeners["touchend"] = this.handleTouchEnd.bind(this);
 
+    // Add event listeners for the mousemove, mousedown, mouseup, wheel, touchmove, touchstart, and touchend events
     this.canvasElement.addEventListener(
       "mousemove",
       this.listeners["mousemove"]
@@ -875,15 +995,15 @@ class Canvas {
     this.canvasElement.addEventListener("touchend", this.listeners["touchend"]);
   }
 
+  // Define a method called removeListener
   removeListener() {
+    // Remove the event listeners for the pointermove, pointerdown, pointerup, wheel, touchmove, touchstart, and touchend events
     this.canvasElement.removeEventListener(
       "pointermove",
-
       this.listeners["mousemove"]
     );
     this.canvasElement.removeEventListener(
       "pointerdown",
-
       this.listeners["mousedown"]
     );
     this.canvasElement.removeEventListener(
@@ -905,23 +1025,31 @@ class Canvas {
     );
   }
 
+  // Set new background
   async setTemplate(url: string) {
     this.background = await downloadPDF(url);
   }
 
+  // Set background
   set background(blobs: Array<string>) {
     this.backgrounds = [];
+    // Iterate through pages
     for (let i = 0; i < blobs.length; i++) {
+      // Create new image
       const img = new Image();
       img.src = blobs[i];
+
+      // Add image to background
       this.backgrounds.push(img);
     }
     setTimeout(() => {
+      // Rerender and add listeners
       this.render();
       this.bindListeners();
     }, 1);
   }
 
+  // Convert data to an object
   save() {
     const strokePoints = this.strokes.map((x) => ({
       points: x.points,
@@ -934,11 +1062,13 @@ class Canvas {
     return data;
   }
 
+  // Save data to disk after every change
   saveToDisk() {
     this.note.data = this.save();
     this.saveCallback();
   }
 
+  // Take object and injest it into the canvas
   load(data: noteData) {
     this.strokes = data.strokes.map((x) => ({
       points: x.points,
@@ -952,6 +1082,10 @@ class Canvas {
     }));
     this.background = data.backgrounds;
   }
+
+  //
+  // Getters and Setters
+  //
 
   get element() {
     return this.canvasElement;
@@ -989,12 +1123,15 @@ class Canvas {
     const canvas = document.createElement("canvas");
     this.canvasElement = canvas;
     const ctx = canvas.getContext("2d");
+
+    // Check that context can be obtained
     if (ctx !== null) {
       this.context = ctx;
     } else {
       throw new Error("Cannot get canvas context");
     }
 
+    // Resize canvas
     this.resizeCanvas(width, height);
   }
 }
