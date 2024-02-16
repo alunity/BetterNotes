@@ -222,6 +222,15 @@ function ToolBar(mainCanvas: Canvas, openDocuments: Function) {
     };
 
     // Add new listeners
+    listener["addBTN"] = () => {
+      mainCanvas.addBackground();
+    };
+    listener["closeBTN"] = () => {
+      mainCanvas.note.data = mainCanvas.save();
+      openDocuments();
+    };
+
+    
     penBTN.addEventListener("click", listener["penBTN"]);
     eraserBTN.addEventListener("click", listener["eraserBTN"]);
     addBTN.addEventListener("click", listener["addBTN"]);
