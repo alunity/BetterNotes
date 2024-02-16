@@ -365,9 +365,6 @@ class Canvas {
       pressure,
     ]);
 
-    if (!(this.points.length % 10)) {
-      this.render();
-    }
     // Only render then new line being drawn
     this.renderStrokes([
       {
@@ -600,12 +597,11 @@ class Canvas {
   zoom(
     factor: number,
     x = this.canvasElement.width / 2,
-    y = this.canvasElement.height / 2,
-    smooth = this.smooth
+    y = this.canvasElement.height / 2
   ) {
     if (this.zoomFactor < this.ZOOM_MIN && factor < 1) return;
     if (this.zoomFactor > this.ZOOM_MAX && factor > 1) return;
-    if (smooth) {
+    if (this.smooth) {
       this.smoothCanvasZoom(factor, x, y);
     } else {
       this.canvasZoom(factor, x, y);
@@ -710,7 +706,6 @@ class Canvas {
 
     this.context.scale(this.zoomFactor, this.zoomFactor);
     this.context.translate(this.xScroll, this.yScroll);
-    this.render();
     this.canvasScroll(x, y);
   }
 
