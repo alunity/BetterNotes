@@ -284,6 +284,7 @@ function handleStartApp() {
 start();
 documents();
 if (document.location.href.includes("dino")) {
+  canvasOptions.smooth = false;
   handleStartApp();
   createNote(
     "dino",
