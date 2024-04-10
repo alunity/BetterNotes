@@ -833,6 +833,7 @@ class Canvas {
   resizeCanvas(width: number, height: number) {
     this.canvasElement.height = height;
     this.canvasElement.width = width;
+    this.render();
   }
 
   addBackground(num = this.backgrounds.length - 1) {

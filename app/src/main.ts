@@ -240,6 +240,14 @@ function openNote(note: Note) {
     ToolBar(canvas, openDocuments);
 
     canvasDiv.appendChild(canvas.element);
+
+    // Make canvas resize with window
+    window.addEventListener("resize", () => {
+      canvas.resizeCanvas(
+        window.innerWidth,
+        window.innerHeight - toolBarElement.clientHeight
+      );
+    });
   }
 }
 
